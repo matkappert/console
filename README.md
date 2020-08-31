@@ -9,10 +9,10 @@ This library provides some additions to vanilla `Serial.print()`:
 ```Arduino
 
 // you can chain print() and println() methods
-aSerial.print("x = ").print(x).print("y = ").println(y);
+console.print("x = ").print(x).print("y = ").println(y);
 
 // short method names are also available
-aSerial.p("x = ").p(x).p("y = ").pln(y);
+console.p("x = ").p(x).p("y = ").pln(y);
 ```
 You cand find a complete example [here](https://github.com/klenov/advancedSerial/blob/master/examples/Basic/Basic.ino).
 
@@ -21,28 +21,28 @@ There are four verbosity levels. The order in terms of verbosity, from least to 
 It may be easier to see this in the example:
 ```Arduino
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
-  aSerial.setPrinter(Serial);
-  aSerial.setFilter(Level::vv); // The filtering threshold is set to Level::vv
+  console.setPrinter(Serial);
+  console.setFilter(Level::vv); // The filtering threshold is set to Level::vv
 }
 
 void loop() {
   // This message will be printed
-  aSerial.v().println("Level v is less verbose than the filtering threshold");
+  console.v().println("Level v is less verbose than the filtering threshold");
   // This message also will be printed
-  aSerial.vv().println("Level vv is equal to the filtering threshold"); 
+  console.vv().println("Level vv is equal to the filtering threshold"); 
   
   // This message won't be printed
-  aSerial.vvv().println("Level vvv is more verbose than the filtering threshold");
+  console.vvv().println("Level vvv is more verbose than the filtering threshold");
   // This message won't be printed
-  aSerial.vvvv().println("Level vvvv is more verbose than the filtering threshold");
+  console.vvvv().println("Level vvvv is more verbose than the filtering threshold");
 }
 ```
 
 **Consider storing long strings on flash memory rather than RAM using F() macro**
 ```Arduino
-aSerial.println(F("This string will be stored in flash memory"));
+console.println(F("This string will be stored in flash memory"));
 
 ```
 

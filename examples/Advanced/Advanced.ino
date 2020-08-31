@@ -7,27 +7,30 @@
 #include <console.h>
 
 void printHelpCmd(const char *arg);
-void setOutputCmd(const char *arg);
-void getInputCmd(const char *arg);
+void toggle(const char *arg);
+void set(const char *arg);
+
+// --ssid="xxx" --password="xxx" --reboot
+// -s xxx
 
 const cmd_t commands[] = {
-  {"help", printHelpCmd},
-  {"?", printHelpCmd},
-  {"setOutput", setOutputCmd},
-  {"1", setOutputCmd},
-  {"getInput", getInputCmd},
+  {"?", "help", printHelpCmd},
+  {"t", "toggle", toggle},
+  {"s", "set", set}
 };
 
 
 
 void setup() {
   Serial.begin(115200);
-
+  delay(100);
+  
   console.setPrinter(Serial);
-  console.setFilter(Level::vv);
+  console.setFilter(Level::vvvv);
   /* Uncomment the following line to disable the output. By defalut the ouput is on. */
   // console.off();
 
+  console.v().pln().pln("-----------------------");
   console.begin(commands, sizeof(commands));
 }
 
@@ -46,7 +49,7 @@ void printHelpCmd(const char *arg) {
 }
 
 
-void setOutputCmd(const char *arg) {
+void toggle(const char *arg) {
 //  if (strcmp(arg, "HIGH") == 0) {
 //    digitalWrite(Q0_0, HIGH);
 //    Serial.println("Q0.0 set to HIGH");
@@ -54,15 +57,15 @@ void setOutputCmd(const char *arg) {
 //    digitalWrite(Q0_0, LOW);
 //    Serial.println("Q0.0 set to LOW");
 //  }
-console.v().p("setOutputCmd").pln(arg);
+console.v().p("void toggle(").p(arg).p(")");
 }
 
 
-void getInputCmd(const char *arg) {
+void set(const char *arg) {
 //  int value = digitalRead(I0_0);
 //  if (value == HIGH) {
 //    Serial.println("I0.0 is HIGH");
 //  } else {
-   console.v().p("getInputCmd").pln(arg);
+   console.v().p("void set(").p(arg).p(")");
 //  }
 }

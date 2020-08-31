@@ -13,6 +13,7 @@
 #define CONSOLE_BUFFER_SIZE 100
 typedef void (*cmd_action_t)(const char *);
 typedef struct {
+  const char *shortcut;
   const char *command;
   cmd_action_t action;
 } cmd_t;
