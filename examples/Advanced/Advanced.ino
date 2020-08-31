@@ -13,6 +13,7 @@ void set(const char *arg);
 // --ssid="xxx" --password="xxx" --reboot
 // -s xxx
 
+#define menu_length 3
 const cmd_t commands[] = {
   {"?", "help", printHelpCmd},
   {"t", "toggle", toggle},
@@ -30,8 +31,7 @@ void setup() {
   /* Uncomment the following line to disable the output. By defalut the ouput is on. */
   // console.off();
 
-  console.v().pln().pln("-----------------------");
-  console.begin(commands, sizeof(commands));
+  console.begin(commands, menu_length);
 }
 
 void loop() {
@@ -57,7 +57,7 @@ void toggle(const char *arg) {
 //    digitalWrite(Q0_0, LOW);
 //    Serial.println("Q0.0 set to LOW");
 //  }
-console.v().p("void toggle(").p(arg).p(")");
+console.v().p("void toggle(").p(arg).pln(")");
 }
 
 
@@ -66,6 +66,6 @@ void set(const char *arg) {
 //  if (value == HIGH) {
 //    Serial.println("I0.0 is HIGH");
 //  } else {
-   console.v().p("void set(").p(arg).p(")");
+   console.v().p("void set(").p(arg).pln(")");
 //  }
 }

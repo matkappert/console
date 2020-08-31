@@ -146,8 +146,9 @@ public:
 
 private:
     void reset();
-    void processCommand();
+    void processCommand(char *_ptr);
     void prompt();
+    char trim(char *cstr);
 };
 
 extern _console console;
