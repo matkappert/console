@@ -1,0 +1,3 @@
+[submodule "src/Regexp"]
+	path = src/Regexp
+	url = https://github.com/nickgammon/Regexp
