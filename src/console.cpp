@@ -12,6 +12,8 @@ void _console::begin(const cmd_t * commands, size_t num) {
   _commands = commands;
   _num = num;
 
+ 
+
   prompt();
 }
 
@@ -34,7 +36,8 @@ void _console::update() {
 
       // process it
       if (_bufferLen > 0) {
-        processCommand(_buffer);
+       // processCommand(_buffer);
+        find(_buffer);
       }
 
       // start again
@@ -52,12 +55,23 @@ void _console::update() {
   }
 }
 
-char _console::trim(char * cstr) {
-  char * str = cstr;
-  while ( * str == ' ' || * str == '=') {
-    ++str;
+
+
+void _console::find(char * buf) {
+   MatchState ms(buf);
+   char result = ms.Match("(%a+)([= ]?)\"([.%C]*)\"");
+   if (result == REGEXP_MATCHED) {
+     p("result:").pln(result);
+     p("start:").p(ms.MatchStart).p(" length:").pln(ms.MatchLength);
+     p("Got match:").pln(ms.GetMatch(buf));
   }
-  return str;
+  else if (result == REGEXP_NOMATCH) {
+    pln("✖✖✖");
+  }
+  else {
+   p("Error:").pln(result);
+  }
+  
 }
 
 void _console::processCommand(char * _ptr) {

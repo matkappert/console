@@ -9,6 +9,7 @@
 
 #include <stdarg.h>
 #include "Arduino.h"
+#include "Regexp/src/Regexp.h"
 
 #define CONSOLE_BUFFER_SIZE 100
 typedef void (*cmd_action_t)(const char *);
@@ -148,7 +149,7 @@ private:
     void reset();
     void processCommand(char *_ptr);
     void prompt();
-    char trim(char *cstr);
+    void find(char *buf);
 };
 
 extern _console console;
