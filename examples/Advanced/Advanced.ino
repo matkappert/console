@@ -25,13 +25,18 @@ const cmd_t commands[] = {
 void setup() {
   Serial.begin(115200);
   delay(100);
+
   
   console.setPrinter(Serial);
   console.setFilter(Level::vvvv);
   /* Uncomment the following line to disable the output. By defalut the ouput is on. */
   // console.off();
-
+  console.v().pln(".............");
+  // console.vvvv().pln("Compiled: ").p(__FILE__).p(", ").pln(__VERSION__);
+  console.p(__DATE__).p(" - ").pln(__TIME__);
   console.begin(commands, menu_length);
+
+
 }
 
 void loop() {

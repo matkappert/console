@@ -9,7 +9,6 @@
 
 #include <stdarg.h>
 #include "Arduino.h"
-#include "Regexp/src/Regexp.h"
 
 #define CONSOLE_BUFFER_SIZE 100
 typedef void (*cmd_action_t)(const char *);
@@ -40,6 +39,7 @@ private:
     size_t _num;
     size_t _bufferLen;
     char _buffer[CONSOLE_BUFFER_SIZE];
+    char _reg[CONSOLE_BUFFER_SIZE];
 
     inline bool shouldBePrinted(void) { return _output_enabled && ( _message_level <= _filter_level ); }
 public:
@@ -145,11 +145,13 @@ public:
     void begin(const cmd_t *commands, size_t num);
     void update();
 
+
 private:
     void reset();
     void processCommand(char *_ptr);
     void prompt();
     void find(char *buf);
+    
 };
 
 extern _console console;

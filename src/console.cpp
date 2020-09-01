@@ -12,8 +12,6 @@ void _console::begin(const cmd_t * commands, size_t num) {
   _commands = commands;
   _num = num;
 
- 
-
   prompt();
 }
 
@@ -36,8 +34,7 @@ void _console::update() {
 
       // process it
       if (_bufferLen > 0) {
-       // processCommand(_buffer);
-        find(_buffer);
+       processCommand(_buffer);
       }
 
       // start again
@@ -55,24 +52,6 @@ void _console::update() {
   }
 }
 
-
-
-void _console::find(char * buf) {
-   MatchState ms(buf);
-   char result = ms.Match("(%a+)([= ]?)\"([.%C]*)\"");
-   if (result == REGEXP_MATCHED) {
-     p("result:").pln(result);
-     p("start:").p(ms.MatchStart).p(" length:").pln(ms.MatchLength);
-     p("Got match:").pln(ms.GetMatch(buf));
-  }
-  else if (result == REGEXP_NOMATCH) {
-    pln("✖✖✖");
-  }
-  else {
-   p("Error:").pln(result);
-  }
-  
-}
 
 void _console::processCommand(char * _ptr) {
   char * ptr = _ptr;
@@ -124,7 +103,7 @@ void _console::processCommand(char * _ptr) {
 
 void _console::prompt() {
   _bufferLen = 0;
-  _printer -> print("> ");
+  _printer -> print("~ $ ");
 }
 
 _console console = _console();
