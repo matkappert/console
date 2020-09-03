@@ -1,11 +1,4 @@
-/*
-   advancedSerial Library
-   https://github.com/klenov/advancedSerial
-*/
-
 #include "console.h"
-
-// All implementation in .h because avr goes crazy with templates in .cpp
 
 void _console::begin(const cmd_t * commands, size_t num) {
   _bufferLen = 0;
@@ -13,6 +6,7 @@ void _console::begin(const cmd_t * commands, size_t num) {
   _num = num;
 
   prompt();
+
 }
 
 void _console::update() {
@@ -34,7 +28,7 @@ void _console::update() {
 
       // process it
       if (_bufferLen > 0) {
-       processCommand(_buffer);
+        processCommand(_buffer);
       }
 
       // start again
@@ -52,11 +46,9 @@ void _console::update() {
   }
 }
 
-
 void _console::processCommand(char * _ptr) {
   char * ptr = _ptr;
   char * arg = nullptr;
-
   while ( * ptr != '\0') {
     if ( * ptr == ' ' || * ptr == '=') {
       * ptr++ = '\0';
@@ -69,35 +61,44 @@ void _console::processCommand(char * _ptr) {
   while ( * ptr == ' ' || * ptr == '=') {
     ++ptr;
   }
-  
-  arg = ptr;
-  if (_commands && (_num > 0)) {
-    const cmd_t * command = _commands;
-    for (size_t i = 0; i < _num; ++i) {
-      if (strcmp(command -> command, _ptr) == 0 || strcmp(command -> shortcut, _ptr) == 0) {
-        if (arg[0] == '"') {
-          String str = arg;
 
-          uint16_t start_pos = str.indexOf('"') + 1;
-          uint16_t end_pos = str.indexOf('"', start_pos);
-          String value = str.substring(start_pos, end_pos);
-          String then = str.substring(end_pos + 1, -1);
-          then.trim();
-          ptr = then.c_str();
-          command -> action(value.c_str());
-          if (then.indexOf('"', start_pos + 1) >= 0) {
-            processCommand(ptr);
+  if (strcmp("help", _ptr) == 0 || strcmp("?", _ptr) == 0) {
+    printHelp();
+    return;
+  } else if (strcmp("info", _ptr) == 0 || strcmp("i", _ptr) == 0) {
+    printInfo();
+    return;
+  } else {
+
+    arg = ptr;
+    if (_commands && (_num > 0)) {
+      const cmd_t * command = _commands;
+      for (size_t i = 0; i < _num; ++i) {
+        if (strcmp(command -> command, _ptr) == 0 || strcmp(command -> shortcut, _ptr) == 0) {
+          if (arg[0] == '"') {
+            String str = arg;
+            uint16_t start_pos = str.indexOf('"') + 1;
+            uint16_t end_pos = str.indexOf('"', start_pos);
+            String value = str.substring(start_pos, end_pos);
+            String then = str.substring(end_pos + 1, -1);
+            then.trim();
+            // _buffer = (char*)then.c_str();
+            command -> action(value.c_str());
+            if (then.indexOf('"', start_pos + 1) >= 0) {
+              processCommand((char * ) then.c_str());
+            } else {
+              return;
+            }
           } else {
-            return;
+            command -> action(arg);
           }
-        } else {
-          command -> action(arg);
+          return;
         }
-        return;
+        ++command;
       }
-      ++command;
+      v().p("\nERROR: invalid option: ").pln(_ptr);
+      printHelp();
     }
-    v().p("\nERROR: '").p(_ptr).pln("' command not found.");
   }
 }
 
@@ -107,3 +108,9 @@ void _console::prompt() {
 }
 
 _console console = _console();
+
+/*
+   Thanks to klenov
+   advancedSerial Library
+   https://github.com/klenov/advancedSerial
+*/

@@ -1,5 +1,5 @@
 {
-  "name": "serial",
+  "name": "console",
   "keywords": "logging, serial, debugging, verbosity levels, cmd, console",
   "description": "An Arduino library with additions to vanilla Serial.print(). Chainable methods and verbosity levels. Suitable for debug messages.",
   "repository": {

@@ -1,24 +1,23 @@
-/*
-   Thanks to klenov
-   advancedSerial Library - Advanced Example
-   https://github.com/klenov/advancedSerial
-*/
-
 #include <console.h>
+_version version = {0,1,0};
 
-void printHelpCmd(const char *arg);
-void toggle(const char *arg);
-void set(const char *arg);
+void trigger(const char *arg);
+void channel(const char *arg);
 
-// --ssid="xxx" --password="xxx" --reboot
-// -s xxx
+uint8_t menu_length = 1;
 
-#define menu_length 3
-const cmd_t commands[] = {
-  {"?", "help", printHelpCmd},
-  {"t", "toggle", toggle},
-  {"s", "set", set}
+ cmd_t commands[9] = {
+  {"f", "function", trigger, "Trigger the test function"}
 };
+
+char* channels[][2] = { 
+  {"1", "ch:1"},
+  {"2", "ch:2"},
+  {"3", "ch:3"},
+  {"4", "ch:4"},
+  {"5", "ch:5"}
+};
+
 
 
 
@@ -26,51 +25,43 @@ void setup() {
   Serial.begin(115200);
   delay(100);
 
-  
+  console.version = version;
   console.setPrinter(Serial);
   console.setFilter(Level::vvvv);
-  /* Uncomment the following line to disable the output. By defalut the ouput is on. */
-  // console.off();
-  console.v().pln(".............");
-  // console.vvvv().pln("Compiled: ").p(__FILE__).p(", ").pln(__VERSION__);
-  console.p(__DATE__).p(" - ").pln(__TIME__);
+ 
+ for(uint8_t i=0; i<3; i++){
+  append( channels[i][0], channels[i][1], channel, "Toggle output channel");
+ }
+
   console.begin(commands, menu_length);
-
-
 }
 
 void loop() {
-  // Update cmdline often to process commands written in the Serial port
   console.update();
+}
 
+void push(char *shortcut, char *command, cmd_action_t action, char *description){
+  for(uint8_t i=menu_length; i>0; i-- ){
+    console.p(i).p(" = ").pln(i-1);
+    commands[i] = commands[i-1];
+  }
+  menu_length++;
+  commands[0] = {shortcut, command, action, description};
+}
+
+void append(char *shortcut, char *command, cmd_action_t action, char *description){
+  commands[menu_length] = {shortcut, command, action, description};
+  menu_length++;
 }
 
 
-void printHelpCmd(const char *arg) {
-  console.v().pln("List of commands:");
-  console.v().pln("help                    print this help");
-  console.v().pln("setOutput HIGH|LOW      set Q0.0 to HIGH or LOW");
-  console.v().pln("getInput                get I0.0 digital value");
+
+
+void trigger(const char *arg) {
+  console.v().p("void trigger(").p(arg).pln(")");
 }
 
 
-void toggle(const char *arg) {
-//  if (strcmp(arg, "HIGH") == 0) {
-//    digitalWrite(Q0_0, HIGH);
-//    Serial.println("Q0.0 set to HIGH");
-//  } else if (strcmp(arg, "LOW") == 0) {
-//    digitalWrite(Q0_0, LOW);
-//    Serial.println("Q0.0 set to LOW");
-//  }
-console.v().p("void toggle(").p(arg).pln(")");
-}
-
-
-void set(const char *arg) {
-//  int value = digitalRead(I0_0);
-//  if (value == HIGH) {
-//    Serial.println("I0.0 is HIGH");
-//  } else {
-   console.v().p("void set(").p(arg).pln(")");
-//  }
+void channel(const char *arg) {
+   console.v().p("void channel(").p(arg).pln(")");
 }
