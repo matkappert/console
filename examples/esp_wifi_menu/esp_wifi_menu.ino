@@ -9,23 +9,23 @@ _version version = {0, 0, 0};
 
 const uint8_t menu_length = 3;
 
-void ssid(const char *arg, const uint8_t length);
-void password(const char *arg, const uint8_t length);
-void resetWifi(const char *arg, const uint8_t length);
+void ssidCallback(const char *arg, const uint8_t length);
+void passwordCallback(const char *arg, const uint8_t length);
+void resetWifiCallback(const char *arg, const uint8_t length);
 
-cmd_t commands[] = {{"s", "ssid", ssid, "\tSet WiFi SSID"},
-                    {"p", "password", password, "\tSet WiFi password"},
-                    {"",  "reset-wifi", resetWifi, "reset WiFi settings"}};
+cmd_t commands[] = {{"s", "ssid", ssidCallback, "\tSet WiFi SSID."},
+                    {"p", "password", passwordCallback, "\tSet WiFi password."},
+                    {"",  "reset-wifi", resetWifiCallback, "reset WiFi settings."}};
 
-struct wifi_settings_s {
+struct settings_s {
   uint8_t address;
   char buffer[30];
   uint8_t size;
-} wifi_settings_default = {0, "", 30};
+};
 
-typedef struct wifi_settings_s wifi_settings;
-wifi_settings wifi_ssid = wifi_settings_default;
-wifi_settings wifi_password = wifi_settings_default;
+typedef struct settings_s settings;
+settings wifi_ssid = {0, "", 30};
+settings wifi_password = {30, "", 30};
 
 void setup() {
   Serial.begin(115200);
@@ -72,29 +72,39 @@ void setup() {
   }
 }
 
-void loop() { console.update(); }
+void loop() { 
+  console.update(); 
+}
 
-void ssid(const char *arg, const uint8_t length) {
-  if (length) {
+/***********************
+  // Callbacks.
+************************/
+
+void ssidCallback(const char *arg, const uint8_t length) {
+  if (length && length <= wifi_ssid.size) {
     writeEEPROM(wifi_ssid.address, (char *)arg);
-    console.vv().pln("Reboot system to apply WiFi settings");
-  } else {
+    console.vv().pln("Reboot system to apply WiFi settings.");
+  } else if(length==0) {
     readEEPROM(wifi_ssid.address, wifi_ssid.buffer, wifi_ssid.size);
     console.vv().p("SSID: ").pln(wifi_ssid.buffer);
+  }else{
+    console.v().pln("#ERROR!");
   }
 }
 
-void password(const char *arg, const uint8_t length) {
-  if (length) {
+void passwordCallback(const char *arg, const uint8_t length) {
+  if (length && length <= wifi_password.size) {
     writeEEPROM(wifi_password.address, (char *)arg);
-    console.vv().pln("Reboot system to apply WiFi settings");
-  } else {
+    console.vv().pln("Reboot system to apply WiFi settings.");
+  } else if(length==0) {
     readEEPROM(wifi_password.address, wifi_password.buffer, wifi_password.size);
     console.vv().p("Password: ").pln(wifi_password.buffer);
+  }else{
+    console.v().pln("#ERROR!");
   }
 }
 
-void resetWifi(const char *arg, const uint8_t length) {
+void resetWifiCallback(const char *arg, const uint8_t length) {
   writeEEPROM(wifi_ssid.address, "");
   writeEEPROM(wifi_password.address, "");
 }
@@ -104,7 +114,7 @@ void readEEPROM(uint8_t start_address, char *buffer, uint8_t buffer_size) {
   for (uint8_t i = start_address; i < start_address + 50; i++) {
     char in = EEPROM.read(i);
     if (buffer_address >= 50 || buffer_address >= buffer_size + start_address) {
-      console.v().pln("ERROR! buffer overflow.");
+      console.v().pln("#ERROR! buffer overflow.");
       buffer[buffer_address] = '\0';
       break;
     }
