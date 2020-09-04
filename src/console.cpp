@@ -87,16 +87,14 @@ void _console::processCommand(char* _ptr) {
             String value = str.substring(start_pos, end_pos);
             String then = str.substring(end_pos + 1, -1);
             then.trim();
-            command->action(value.c_str(), strlen(value.c_str()));
-            pln(strlen(then.c_str()));
-            // if (then.indexOf('"', start_pos + 1) >= 0) {
+            command->action(value.c_str(), strlen(value.c_str()), _ptr);
             if (strlen(then.c_str()) > 0) {
               processCommand((char*)then.c_str());
             } else {
               return;
             }
           } else {
-            command->action(arg, strlen(arg));
+            command->action(arg, strlen(arg), _ptr);
           }
           return;
         }

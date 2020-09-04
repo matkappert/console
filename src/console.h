@@ -21,7 +21,7 @@ typedef struct {
 } _version;
 
 #define CONSOLE_BUFFER_SIZE 100
-typedef void (*cmd_action_t)(const char *, uint8_t);
+typedef void (*cmd_action_t)(const char *, uint8_t, const char *);
 typedef struct {
   const char *shortcut;
   const char *command;
