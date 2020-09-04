@@ -12,7 +12,7 @@ console.print("x = ").print(x).print("y = ").println(y);
 // short method names are also available
 console.p("x = ").p(x).p("y = ").pln(y);
 ```
-You cand find a complete example [here](https://github.com/klenov/advancedSerial/blob/master/examples/Basic/Basic.ino).
+<!-- You cand find a complete example [here](https://github.com/klenov/advancedSerial/blob/master/examples/Basic/Basic.ino). -->
 
 **2. Verbosity levels:**
 There are four verbosity levels. The order in terms of verbosity, from least to most is `v, vv, vvv, vvvv`. You can choose at wich verbosity level a message will be printed and also set a filtering threshold. Only the masseges less or equally verbose to the treshold level will be printed. 
@@ -44,7 +44,7 @@ console.println(F("This string will be stored in flash memory"));
 
 ```
 
-You can find a complete example [here](https://github.com/klenov/advancedSerial/blob/master/examples/Advanced/Advanced.ino).
+<!-- You can find a complete example [here](https://github.com/klenov/advancedSerial/blob/master/examples/Advanced/Advanced.ino). -->
 
 You should have Arduino IDE 1.5.8 or newer to use this library or you can [manually enable C++11 in the configuration files](https://arduino.land/FAQ/content/2/49/en/can-c11-be-used-with-arduino.html).
 
