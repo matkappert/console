@@ -13,9 +13,9 @@ void ssid(const char *arg, const uint8_t length);
 void password(const char *arg, const uint8_t length);
 void resetWifi(const char *arg, const uint8_t length);
 
-cmd_t commands[] = {{"s", "ssid", ssid, "Set WiFi SSID"},
-                    {"p", "password", password, "Set WiFi password"},
-                    {"", "reset-wifi", resetWifi, "reset WiFi settings"}};
+cmd_t commands[] = {{"s", "ssid", ssid, "\tSet WiFi SSID"},
+                    {"p", "password", password, "\tSet WiFi password"},
+                    {"",  "reset-wifi", resetWifi, "reset WiFi settings"}};
 
 struct wifi_settings_s {
   uint8_t address;
@@ -77,7 +77,7 @@ void loop() { console.update(); }
 void ssid(const char *arg, const uint8_t length) {
   if (length) {
     writeEEPROM(wifi_ssid.address, (char *)arg);
-    console.vv().pln("Reboot system to apple WiFi settings");
+    console.vv().pln("Reboot system to apply WiFi settings");
   } else {
     readEEPROM(wifi_ssid.address, wifi_ssid.buffer, wifi_ssid.size);
     console.vv().p("SSID: ").pln(wifi_ssid.buffer);
@@ -87,7 +87,7 @@ void ssid(const char *arg, const uint8_t length) {
 void password(const char *arg, const uint8_t length) {
   if (length) {
     writeEEPROM(wifi_password.address, (char *)arg);
-    console.vv().pln("Reboot system to apple WiFi settings");
+    console.vv().pln("Reboot system to apply WiFi settings");
   } else {
     readEEPROM(wifi_password.address, wifi_password.buffer, wifi_password.size);
     console.vv().p("Password: ").pln(wifi_password.buffer);

@@ -2,7 +2,7 @@
  * @file    console.h
  * @author  matkappert
  * @repo    github.com/matkappert/console
- * @version V0.1.0
+ * @version V0.1.1
  * @date    03/09/20
  * @format  http://format.krzaq.cc (style: google)
 */
@@ -66,7 +66,7 @@ class _console {
         _filter_level(default_filter_level),
         _message_level(default_message_level),
         _printer(nullptr),
-        // cmd >>
+
         _bufferLen(0),
         _commands(nullptr),
         _num(0) {}
@@ -167,37 +167,26 @@ class _console {
   }
   inline _console &pln(void) { return println(); }
 
-  void begin(const cmd_t *commands, size_t num);
+  void begin(const cmd_t *commands, size_t num, bool enable_prompt = false);
 
   void printHelp() {
     const cmd_t *command = _commands;
     printBox(true);
-    v().pln("   OPTIONS").pln();
-    v().p("   ")
-        .p("-? --help")
-        .p(":\t\t")
-        .pln("Displays a list of the available commands.");
-    v().p("   ").p("-i --info").p(":\t\t").pln("Displays firmware info.");
-    // v().p("   ").p("-v --verbose").p(":\t").p("Sets the message verbosity
-    // level").pln(_message_level);
-    v().p("   ")
-        .p("-v --verbose")
-        .p(":\t")
+    v().pln("   OPTIONS:").pln();
+    v().p("   ?, help\t\t").pln("Displays a list of the available commands.");
+    v().p("   i, info\t\t").pln("Displays firmware info.");
+    v().p("   v, verbose\t\t")
         .p("Sets the message verbosity level. (")
         .p(messageLevel())
         .pln(")");
 #ifdef ESP8266
-    v().p("   ").p("   --reboot").p(":\t\t").p("Reboot system.");
+    v().pln("      reboot\t\tReboot system.");
 #endif
     v().pln();
     for (size_t i = 0; i < _num; ++i) {
-      v().p("   -")
-          .p(command->shortcut)
-          .p(" --")
-          .p(command->command)
-          .p("\t\t")
-          .p(command->description)
-          .pln();
+      v().p("   ");
+      strlen(command->shortcut) ? p(command->shortcut).p(", ") : p("   ");
+      p(command->command).p("\t").p(command->description).pln();
       ++command;
     }
     printBox(false);
@@ -205,7 +194,7 @@ class _console {
 
   void printInfo() {
     printBox(true);
-    v().pln("   INFO").pln();
+    v().pln("   INFO:").pln();
     v().p("   ")
         .p("FW version")
         .p(":\t\t")
@@ -215,14 +204,11 @@ class _console {
         .p(".")
         .p(version.patch)
         .pln();
-    // v().p("   ").p("Firmware").p(":\t\t").pln(__BASE_FILE__);
     v().p("   ").p("Build date").p(":\t\t").pln(__TIMESTAMP__);
-    // v().p("   ").p("Build date").p(":\t\t").p(__DATE__).p(" -
-    // ").p(__TIMESTAMP__).p(" - ").pln(__TIME__);
     v().p("   ").p("GCC version").p(":\t\t").pln(__VERSION__);
 
 #ifdef ESP8266
-    v().pln().pln("   ESP8266");
+    v().pln().pln("   ESP8266:");
     uint32_t realSize = ESP.getFlashChipRealSize();
     uint32_t ideSize = ESP.getFlashChipSize();
     FlashMode_t ideMode = ESP.getFlashChipMode();
@@ -271,4 +257,3 @@ class _console {
 extern _console console;
 typedef _console::Level Level;
 #endif
-

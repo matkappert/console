@@ -1,11 +1,13 @@
 #include "console.h"
 
-void _console::begin(const cmd_t* commands, size_t num) {
+void _console::begin(const cmd_t* commands, size_t num, bool enable_prompt) {
   _bufferLen = 0;
   _commands = commands;
   _num = num;
 
-  prompt();
+  if (enable_prompt) {
+    prompt();
+  }
 }
 
 void _console::update() {
@@ -63,15 +65,14 @@ void _console::processCommand(char* _ptr) {
 
   if (strcmp("help", _ptr) == 0 || strcmp("?", _ptr) == 0) {
     printHelp();
-    // return;
   } else if (strcmp("info", _ptr) == 0 || strcmp("i", _ptr) == 0) {
     printInfo();
-    // return;
   } else if (strcmp("reboot", _ptr) == 0) {
 #ifdef ESP8266
     ESP.restart();
 #endif
-    // return;
+  } else if (strcmp("verbose", _ptr) == 0 || strcmp("v", _ptr) == 0) {
+    vv().pln("@TODO: finish implementing verbose");
   } else {
     arg = ptr;
     if (_commands && (_num > 0)) {
@@ -86,12 +87,13 @@ void _console::processCommand(char* _ptr) {
             String value = str.substring(start_pos, end_pos);
             String then = str.substring(end_pos + 1, -1);
             then.trim();
-            // _buffer = (char*)then.c_str();
             command->action(value.c_str(), strlen(value.c_str()));
-            if (then.indexOf('"', start_pos + 1) >= 0) {
+            pln(strlen(then.c_str()));
+            // if (then.indexOf('"', start_pos + 1) >= 0) {
+            if (strlen(then.c_str()) > 0) {
               processCommand((char*)then.c_str());
             } else {
-              // return;
+              return;
             }
           } else {
             command->action(arg, strlen(arg));
