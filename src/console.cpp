@@ -68,7 +68,7 @@ void _console::processCommand(char* _ptr) {
   } else if (strcmp("info", _ptr) == 0 || strcmp("i", _ptr) == 0) {
     printInfo();
   } else if (strcmp("reboot", _ptr) == 0) {
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
     ESP.restart();
 #endif
   } else if (strcmp("verbose", _ptr) == 0 || strcmp("v", _ptr) == 0) {

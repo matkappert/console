@@ -179,7 +179,7 @@ class _console {
         .p("Sets the message verbosity level. (")
         .p(messageLevel())
         .pln(")");
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
     v().pln("      reboot\t\tReboot system.");
 #endif
     v().pln();
@@ -246,11 +246,10 @@ class _console {
   }
 
   void addCommand(cmd_t *commands);
-
+  void prompt();
  private:
   void reset();
   void processCommand(char *_ptr);
-  void prompt();
   void find(char *buf);
 };
 
