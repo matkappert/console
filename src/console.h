@@ -1,18 +1,26 @@
 /**
- * @file    console.h
- * @author  matkappert
- * @repo    github.com/matkappert/console
- * @version V0.1.1
- * @date    03/09/20
- * @format  http://format.krzaq.cc (style: google)
+    @file    console.h
+    @author  matkappert
+    @repo    github.com/matkappert/console
+    @version V1.0.0
+    @date    03/09/20
+    @format  http://format.krzaq.cc (style: google)
 */
 
-#ifndef CONSOLE_H
-#define CONSOLE_H
+#ifndef __CONSOLE_H
+#define __CONSOLE_H
 
 #include <stdarg.h>
 
 #include "Arduino.h"
+
+
+#include "menu_wifi.h"
+
+
+
+
+
 
 typedef struct {
   uint8_t major;
@@ -21,7 +29,7 @@ typedef struct {
 } _version;
 
 #define CONSOLE_BUFFER_SIZE 100
-typedef void (*cmd_action_t)(const char *, uint8_t, const char *);
+typedef void (*cmd_action_t)(const char *, const char *, uint8_t);
 typedef struct {
   const char *shortcut;
   const char *command;
@@ -30,10 +38,12 @@ typedef struct {
 } cmd_t;
 
 class _console {
- public:
+  public:
+
+
   enum class Level { v = 0, vv, vvv, vvvv };
 
- private:
+  private:
   bool _output_enabled;
 
   Level _filter_level;
@@ -53,51 +63,61 @@ class _console {
   size_t _bufferLen;
   char _buffer[CONSOLE_BUFFER_SIZE];
   char _reg[CONSOLE_BUFFER_SIZE];
+  bool _includeWifi;
+#ifdef __MENU_WIFI_H
+  _MENUwifi MENUwifi = _MENUwifi();
+#endif
 
   inline bool shouldBePrinted(void) {
     return _output_enabled && (_message_level <= _filter_level);
   }
 
- public:
+  public:
   _version version = {0, 0, 1};
   /*! * default Constructor */
   _console()
-      : _output_enabled(true),
-        _filter_level(default_filter_level),
-        _message_level(default_message_level),
-        _printer(nullptr),
-
-        _bufferLen(0),
-        _commands(nullptr),
-        _num(0) {}
+    : _output_enabled(true),
+      _filter_level(default_filter_level),
+      _message_level(default_message_level),
+      _printer(nullptr),
+      _includeWifi(false),
+      _bufferLen(0),
+      _commands(nullptr),
+      _num(0) {}
 
   void setPrinter(Print &printer) {
     _printer = &printer;
     _stream = (Stream *)&printer;
   }
 
-  void setFilter(Level f_level) { _filter_level = f_level; }
+  void setFilter(Level f_level) {
+    _filter_level = f_level;
+  }
 
-  void on(void) { _output_enabled = true; }
-  void off(void) { _output_enabled = false; }
+  void on(void) {
+    _output_enabled = true;
+  }
+  void off(void) {
+    _output_enabled = false;
+  }
 
   String messageLevel() {
     switch (_message_level) {
-      case Level::v:
-        return "Level: 1";
-        break;
-      case Level::vv:
-        return "Level: 2";
-        break;
-      case Level::vvv:
-        return "Level: 3";
-        break;
-      case Level::vvvv:
-        return "Level: 4";
-        break;
-      default:
-        return "Level: UNKNOWN";
-        break;
+    case Level::v:
+      return "Level: 1";
+      break;
+    case Level::vv:
+      return "Level: 2";
+      break;
+    case Level::vvv:
+      return "Level: 3";
+      break;
+    case Level::vvvv:
+      return "Level: 4";
+      break;
+    default:
+      return "Level: UNKNOWN";
+      break;
     }
   }
 
@@ -105,15 +125,25 @@ class _console {
     _message_level = m_level;
     return *this;
   }
-  inline _console &l(Level m_level) { return level(m_level); }
+  inline _console &l(Level m_level) {
+    return level(m_level);
+  }
 
-  _console &v() { return level(Level::v); }
+  _console &v() {
+    return level(Level::v);
+  }
 
-  _console &vv() { return level(Level::vv); }
+  _console &vv() {
+    return level(Level::vv);
+  }
 
-  _console &vvv() { return level(Level::vvv); }
+  _console &vvv() {
+    return level(Level::vvv);
+  }
 
-  _console &vvvv() { return level(Level::vvvv); }
+  _console &vvvv() {
+    return level(Level::vvvv);
+  }
 
   template <typename Type>
   _console &print(Type tX) {
@@ -148,7 +178,9 @@ class _console {
     }
     return *this;
   }
-  inline _console &p(long n, int base) { return print(n, base); }
+  inline _console &p(long n, int base) {
+    return print(n, base);
+  }
 
   _console &println(long n, int base) {
     if (shouldBePrinted()) {
@@ -157,7 +189,9 @@ class _console {
     }
     return *this;
   }
-  inline _console &pln(long n, int base) { return println(n, base); }
+  inline _console &pln(long n, int base) {
+    return println(n, base);
+  }
 
   _console &println(void) {
     if (shouldBePrinted()) {
@@ -165,9 +199,13 @@ class _console {
     }
     return *this;
   }
-  inline _console &pln(void) { return println(); }
+  inline _console &pln(void) {
+    return println();
+  }
 
   void begin(const cmd_t *commands, size_t num, bool enable_prompt = false);
+
+  void includeWifi();
 
   void printHelp() {
     const cmd_t *command = _commands;
@@ -175,13 +213,17 @@ class _console {
     v().pln("   OPTIONS:").pln();
     v().p("   ?, help\t\t").pln("Displays a list of the available commands.");
     v().p("   i, info\t\t").pln("Displays firmware info.");
-    v().p("   v, verbose\t\t")
-        .p("Sets the message verbosity level. (")
-        .p(messageLevel())
-        .pln(")");
+    v().p("   v, verbose\t\t").p("Sets the message verbosity level. (").p(messageLevel()).pln(")");
 #if defined(ESP8266) || defined(ESP32)
     v().pln("      reboot\t\tReboot system.");
 #endif
+
+#ifdef __MENU_WIFI_H
+    if (_includeWifi) {
+      MENUwifi.printHelp();
+    }
+#endif
+
     v().pln();
     for (size_t i = 0; i < _num; ++i) {
       v().p("   ");
@@ -195,15 +237,7 @@ class _console {
   void printInfo() {
     printBox(true);
     v().pln("   INFO:").pln();
-    v().p("   ")
-        .p("FW version")
-        .p(":\t\t")
-        .p(version.major)
-        .p(".")
-        .p(version.minor)
-        .p(".")
-        .p(version.patch)
-        .pln();
+    v().p("   ").p("FW version").p(":\t\t").p(version.major).p(".").p(version.minor).p(".").p(version.patch).pln();
     v().p("   ").p("Build date").p(":\t\t").pln(__TIMESTAMP__);
     v().p("   ").p("GCC version").p(":\t\t").pln(__VERSION__);
 
@@ -214,22 +248,13 @@ class _console {
     FlashMode_t ideMode = ESP.getFlashChipMode();
     v().p("   ").p("Flash ID").p(":\t\t").pln(ESP.getFlashChipId());
     v().p("   ").p("Flash size").p(":\t\t").pln(realSize);
-    v().p("   ")
-        .p("Flash state")
-        .p(":\t\t")
-        .pln(ideSize != realSize ? "ERROR: Wrong configuration!" : "OKAY");
+    v().p("   ").p("Flash state").p(":\t\t").pln(ideSize != realSize ? "ERROR: Wrong configuration!" : "OKAY");
     v().p("   ").p("IDE size").p(":\t\t").pln(ideSize);
     v().p("   ").p("IDE speed").p(":\t\t").pln(ESP.getFlashChipSpeed());
     v().p("   ")
-        .p("IDE mode")
-        .p(":\t\t")
-        .pln(ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT
-                                             ? "QOUT"
-                                             : ideMode == FM_DIO
-                                                   ? "DIO"
-                                                   : ideMode == FM_DOUT
-                                                         ? "DOUT"
-                                                         : "UNKNOWN");
+    .p("IDE mode")
+    .p(":\t\t")
+    .pln(ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN");
 #endif
 
     printBox(false);
@@ -247,10 +272,13 @@ class _console {
 
   void addCommand(cmd_t *commands);
   void prompt();
- private:
+  private:
   void reset();
   void processCommand(char *_ptr);
+  void processFunction(const char *cmd, const char *arg, const uint8_t length);
   void find(char *buf);
+
+
 };
 
 extern _console console;
