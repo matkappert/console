@@ -15,21 +15,16 @@
 
     @param callback, used for the triggers
 *************************************************************/
-void express_wifi::init(express_console_menu &_console, express_status_led &_status, callback_t _callback) {
-	console = &_console;
-	status = &_status;
-	self = _callback;
-	console->vvvv().p("wifi init...");
-	console->vvvv().pln("done");
-
-	// connect();
+void express_wifi::init() {
+	// self = _callback;
+	if (console) {
+		console->vvvv().p("wifi init...");
+		console->vvvv().pln("done");
+	}
+	readSettings();
 }
 
-void express_wifi::update() {
-
-}
-
-void express_wifi::callback() {
+void express_wifi::update(){
 
 }
 

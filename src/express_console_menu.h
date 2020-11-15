@@ -13,12 +13,13 @@
 
 #include "express_console.h"
 #include "arduino.h"
+
 #include "EEPROM.h"
+#define __EXPRESS_CONSOLE_MENU_LEVEL_INDEX 0
+#include "./CRCx/CRCx.h"
 
-
-#if defined(ESP8266) || defined(ESP8285)
-	#include "./CRCx/CRCx.h"
-#endif
+// #if defined(ESP8266) || defined(ESP8285)	
+// #endif
 
 #define CONSOLE_BUFFER_SIZE 100
 typedef void (*cmd_action_t)(const char *, const char *, uint8_t);
@@ -41,7 +42,7 @@ typedef void (*print_help_callback)();
 class express_console_menu : public  express_console {
   private:
 	bool  _eeprom = false;
-#define __MENU_LEVEL_INDEX 0
+
 
 	struct menu_data_struct {
 		uint8_t level;
@@ -56,6 +57,8 @@ class express_console_menu : public  express_console {
 	Version version = {0, 0, 0};
 	print_help_callback printHelpCallback = nullptr;
 
+	// express_wifi *_wifi;
+
 	void init(Print &printer, const cmd_t* commands, size_t num, bool _prompt = true, bool _eeprom = true);
 
 	uint16_t crc16() {
@@ -69,7 +72,7 @@ class express_console_menu : public  express_console {
 	void saveSettings() {
 		if (_eeprom) {
 			menu_data.CRC = crc16();
-			EEPROM.put(__MENU_LEVEL_INDEX, menu_data);
+			EEPROM.put(__EXPRESS_CONSOLE_MENU_LEVEL_INDEX, menu_data);
 #if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
 			EEPROM.commit();
 #endif
@@ -131,7 +134,7 @@ class express_console_menu : public  express_console {
 		v().p("   ").p("Build date").p(":\t\t").pln(__TIMESTAMP__);
 		v().p("   ").p("GCC version").p(":\t\t").pln(__VERSION__);
 
-#ifdef defined(ESP8266) || defined(ESP8285)
+#if defined(ESP8266) || defined(ESP8285)
 		v().pln().pln("   ESP8266:");
 		uint32_t realSize = ESP.getFlashChipRealSize();
 		uint32_t ideSize = ESP.getFlashChipSize();

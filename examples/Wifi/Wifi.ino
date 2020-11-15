@@ -10,9 +10,9 @@ void statusCallback() {
 
 #include "express_wifi.h"
 express_wifi wifi = express_wifi();
-void wifiCallback() {
-	wifi.callback();
-};
+// void wifiCallback() {
+// 	wifi.callback();
+// };
 
 
 void stateCallback( const char *cmd, const char *arg, const uint8_t length) {
@@ -50,7 +50,8 @@ cmd_t commands[] = {
 
 
 void printHelp() {
-
+	console.v().pln("<<------------------------------------------>>");
+	wifi.printHelp();
 }
 
 
@@ -67,10 +68,18 @@ void setup() {
 	status.init( 2, true, statusCallback);
 	// status.blink(4);
 
-	wifi.init(console, status, wifiCallback);
-	// wifi.ssid("LittleHouse");
 
+	wifi.console = &console;
+	wifi.status = &status;
+
+	wifi.init();
+
+
+
+	// wifi.ssid("LittleHouse");
+    
 	wifi.connect("LittleHouse", "appletree");
+	// wifi.connect();
 
 	// status.addTask( 0, TASK::BLINK, 1 );
 	// status.addTask( 1, TASK::BLINK, 4 );

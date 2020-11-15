@@ -11,6 +11,9 @@
 #include "express_console_menu.h"
 #include "EEPROM.h"
 
+// #include "express_wifi.h"
+
+
 void express_console_menu::init(Print &printer, const cmd_t* commands, size_t num, bool _prompt, bool eeprom) {
 	_bufferLen = 0;
 	_commands = commands;
@@ -31,7 +34,7 @@ void express_console_menu::init(Print &printer, const cmd_t* commands, size_t nu
 #elif defined(ESP8266) || defined(ESP8285)
 		EEPROM.begin(512);
 #endif
-		EEPROM.get(__MENU_LEVEL_INDEX, menu_data);
+		EEPROM.get(__EXPRESS_CONSOLE_MENU_LEVEL_INDEX, menu_data);
 		if (menu_data.CRC != crc16()) {
 			v().pln("ERROR: EEPROM corrupt, loading defaults");
 			defaultSettings();
@@ -172,6 +175,7 @@ void express_console_menu::processFunction( const char *cmd, const char *arg, co
 			v().p("verbose: ").pln(menu_data.level);
 		}
 	} else {
+		// wifi::test();
 		if (_commands && (_num > 0)) {
 			const cmd_t* command = _commands;
 			for (size_t i = 0; i < _num; ++i) {
