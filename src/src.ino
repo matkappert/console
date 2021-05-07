@@ -1,14 +1,16 @@
-#include "console_menu.h"
-console_menu console = console_menu();
+#include "express_console_menu.h"
+express_console_menu console = express_console_menu();
 
 
-#include "status_led.h"
-status_led status = status_led();
-
-
+#include "express_status_led.h"
+express_status_led status = express_status_led();
 void statusCallback() {
 	status.callback();
 };
+
+
+#include "express_wifi.h"
+express_wifi wifi = express_wifi();
 
 
 void stateCallback( const char *cmd, const char *arg, const uint8_t length) {
@@ -46,22 +48,23 @@ cmd_t commands[] = {
 
 
 void printHelp() {
-
+	console.v().pln("<<------------------------------------------>>");
+	wifi.printHelp();
 }
 
 
 void setup() {
 	Serial.begin(115200);
 	delay(500);
-	console.begin(Serial, commands, sizeof(commands) / sizeof(cmd_t), /*PROMPT*/true);
+	console.init(Serial, commands, sizeof(commands) / sizeof(cmd_t), /*PROMPT*/true);
 
 	console.version = {1, 2, 3};
 	// console.setFilter(Level::vvvv);
 	console.printHelpCallback = printHelp;
 
 
-	status.init( 2, true, statusCallback);
-	status.blink(4);
+	status.init( 21, false, statusCallback);
+	// status.blink(4);
 
 	// status.addTask( 0, TASK::BLINK, 1 );
 	// status.addTask( 1, TASK::BLINK, 4 );
@@ -85,9 +88,17 @@ void setup() {
 	// status.removeTask( 3 );
 
 	// status.removeAllTasks();
+	// 
+	// 
+	wifi.console = &console;
+	wifi.status = &status;
+
+	wifi.init();
+	wifi.connect("LittleHouse", "appletree");
 
 }
 
 void loop() {
 	console.update(/*ECHO*/true);
+	wifi.update();
 }

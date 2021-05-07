@@ -21,6 +21,7 @@
 #if defined(ESP8266) || defined(ESP8285)
 	#include <ESP8266WiFi.h>
 #elif defined(ESP32)
+ #include <WiFi.h>
 #endif
 
 class express_wifi  {
@@ -61,7 +62,7 @@ class express_wifi  {
 		// if (_eeprom) {
 #ifdef ESP32
 		if (!EEPROM.begin(512)) {
-			v().pln("ERROR! failed to initialise EEPROM");
+			console->v().pln("ERROR! failed to initialise EEPROM");
 			while (true) {
 				delay(500);
 			}

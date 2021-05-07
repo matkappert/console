@@ -65,7 +65,7 @@ void setup() {
 	console.printHelpCallback = printHelp;
 
 
-	status.init( 2, true, statusCallback);
+	status.init( 21, false, statusCallback);
 	// status.blink(4);
 
 
