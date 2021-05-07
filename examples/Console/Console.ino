@@ -1,29 +1,31 @@
 /*
+   THANKS TO:
    advancedSerial Library - Basic Example
    https://github.com/klenov/advancedSerial
 */
 
-#include <advancedSerial.h>
+#include <express_console.h>
+express_console console = express_console();
 
 int counter = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
-  aSerial.setPrinter(Serial);
+  console.init(Serial);
   /* Uncomment the following line to disable the output. By defalut the ouput is on. */
-  // aSerial.off();
+  // console.off();
 }
 
 void loop() {
 
   // you can chain print() and println() methods
-  aSerial.print("counter = ").println(counter);
+  console.print("counter = ").println(counter);
 
   // also short method names are available
-  aSerial.p("counter = ").pln(counter);
+  console.p("counter = ").pln(counter);
 
-  aSerial.pln().pln();
+  console.pln().pln();
 
   counter++;
   delay(3000);

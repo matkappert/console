@@ -1,10 +1,10 @@
 {
-  "name": "console",
-  "keywords": "logging, serial, debugging, verbosity levels, cmd, console",
+  "name": "express",
+  "keywords": "logging, serial, debugging, verbosity levels, cmd, express",
   "description": "An Arduino library with additions to vanilla Serial.print(). Chainable methods and verbosity levels. Suitable for debug messages.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/matkappert/console"
+    "url": "https://github.com/matkappert/express"
   },
   "version": "1.0.0",
   "frameworks": "arduino",
