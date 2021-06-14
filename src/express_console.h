@@ -16,7 +16,7 @@
 
 class express_console {
   public:
-  enum class Level { v, vv, vvv, vvvv };
+  enum class Level { p, v, vv, vvv, vvvv };
   Print*  _printer;
 
   bool _output_enabled;
@@ -27,11 +27,11 @@ class express_console {
   Level _message_level;
   const Level default_message_level = Level::v;
 
-
-  private:
-  inline bool shouldBePrinted(void) {
+inline bool shouldBePrinted(void) {
     return _output_enabled && ( _message_level <= _filter_level );
   }
+  private:
+  
   public:
   /*! * default Constructor */
   express_console()
@@ -77,6 +77,11 @@ class express_console {
 
   express_console& vvvv() {
     return level(Level::vvvv);
+  }
+
+  express_console &plot()
+  {
+    return level(Level::p);
   }
 
   template <typename Type>
