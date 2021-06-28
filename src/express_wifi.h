@@ -1,115 +1,186 @@
+#ifndef __EXPRESS_WIFI_H
+#define __EXPRESS_WIFI_H
 /*
     @file       express_wifi.h
     @author     matkappert
     @repo       github.com/matkappert/express
-    @version    V1.0.0
     @date       14/11/20
-    @format     C++=""-A14-xn-xc-xl-xk-xV-T4-C-N-xW-w-Y-p-xg-H-W0-xb-j-xf-xh-c-xp-xC200""
 */
+#define EXPRESS_CONSOLE_WIFI_VER "2.2.0"
+// https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
+// https://randomnerdtutorials.com/solved-reconnect-esp32-to-wifi/
+// https://randomnerdtutorials.com/esp32-set-custom-hostname-arduino/
+// https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/#11
+#include <Arduino.h>
 
-#ifndef __EXPRESS_WIFI_H
-#define __EXPRESS_WIFI_H
+#include "Configuration.h"
 
-#include "arduino.h"
-#include "EEPROM.h"
-#define __EXPRESS_WIFI_LEVEL_INDEX 5
-#include "./CRCx/CRCx.h"
-
-#include "express_console_menu.h"
-#include "express_status_led.h"
-
-#if defined(ESP8266) || defined(ESP8285)
-	#include <ESP8266WiFi.h>
-#elif defined(ESP32)
- #include <WiFi.h>
+#ifndef USE_WIFI
+  #define USE_WIFI true
 #endif
+#if (USE_WIFI == true)
 
-class express_wifi  {
+  #if (USE_MENU == true)
+    #include "express_console_menu.h"
+  #endif
+  // #include <unordered_map>
+  #include <vector>
+using std::vector;
 
-  private:
-	struct wifi_data_struct {
-		char *ssid;
-		char *pwd;
+  #include <WiFi.h>
 
-		uint16_t CRC = 0;
-	} wifi_data;
+  // #include "express_status_led.h"
 
-	// typedef void (*callback_t)(void);
-	// typedef void (*callback_with_arg_t)(void*);
-	// callback_t self;
-  public:
+  #if defined(ESP8266) || defined(ESP8285)
+    #include <ESP8266WiFi.h>
+  #elif defined(ESP32)
+    #include <WiFi.h>
+  #endif
 
-	express_console_menu *console = nullptr;
-	express_status_led *status = nullptr;
+const int MAX_SSID = 32;  // max number of characters in WiFi SSID
+const int MAX_PWD  = 64;  // max number of characters in WiFi Password
 
-	express_wifi() {};
+// IPAddress local_IP( DEFAULT_WIFI_LOCAL_IP_ADDRESS[0],  DEFAULT_WIFI_LOCAL_IP_ADDRESS[1],  DEFAULT_WIFI_LOCAL_IP_ADDRESS[2],  DEFAULT_WIFI_LOCAL_IP_ADDRESS[3]);
+// IPAddress gateway(DEFAULT_WIFI_GATEWAY_IP_ADDRESS[0], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[1], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[2], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[3]);
 
+// IPAddress subnet(255, 255, 0, 0);
+// IPAddress primaryDNS(8, 8, 8, 8);    // optional
+// IPAddress secondaryDNS(8, 8, 4, 4);  // optional
 
-	void init();
-	void update();
+// Singleton design for C++ 11
+// https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
+struct express_wifi {
+ public:
+  typedef void (*callback_t)(void);
 
-	void saveSettings() {
-		// if (_eeprom) {
-		wifi_data.CRC = crcx::crc16((uint8_t *)&wifi_data, sizeof(wifi_data) - sizeof(wifi_data.CRC) );
-		EEPROM.put(__EXPRESS_WIFI_LEVEL_INDEX, wifi_data);
-#if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
-		EEPROM.commit();
-#endif
-		// }
-	}
+  typedef void (*event)(system_event_id_t event, system_event_info_t info);
+  // event EVENT_STA_CONNECTED;
 
-	void readSettings() {
-		// if (_eeprom) {
-#ifdef ESP32
-		if (!EEPROM.begin(512)) {
-			console->v().pln("ERROR! failed to initialise EEPROM");
-			while (true) {
-				delay(500);
-			}
-		}
-#elif defined(ESP8266) || defined(ESP8285)
-		EEPROM.begin(512);
-#endif
+  static express_wifi &getInstance() {
+    static express_wifi instance;  // Guaranteed to be destroyed.
+    return instance;               // Instantiated on first use.
+  }
 
-		EEPROM.get(__EXPRESS_WIFI_LEVEL_INDEX, wifi_data);
-		uint16_t crc16  = crcx::crc16((uint8_t *)&wifi_data, sizeof(wifi_data) - sizeof(wifi_data.CRC) );
+ private:
+  express_wifi() {}  // Constructor? (the {} brackets) are needed here.
+ public:
+  express_wifi(express_wifi const &) = delete;
+  void operator=(express_wifi const &) = delete;
 
-		if (wifi_data.CRC != crc16) {
-			console->v().pln("ERROR: Wifi EEPROM corrupt, loading defaults");
-			console->vvvv().p("crc16:").p(crc16).p(", eeprom:").pln(wifi_data.CRC);
-			defaultSettings();
-		} else {
-			console->vvvv().pln("loaded wifi eeprom data.");
-			// p("level: ").pln(menu_data.level);
-			// setLevel( (uint8_t) menu_data.level);
-		}
+ private:
+  typedef uint32_t nvs_handle_t;
 
+ public:
+  struct wifiData_t {
+    char ssid[MAX_SSID + 1] = "\0";
+    char pwd[MAX_PWD + 1]   = "\0";
+    // Static STA
+    IPAddress local_IP      = {DEFAULT_WIFI_LOCAL_IP_ADDRESS[0], DEFAULT_WIFI_LOCAL_IP_ADDRESS[1], DEFAULT_WIFI_LOCAL_IP_ADDRESS[2], DEFAULT_WIFI_LOCAL_IP_ADDRESS[3]};
+    IPAddress gateway_IP    = {DEFAULT_WIFI_GATEWAY_IP_ADDRESS[0], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[1], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[2], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[3]};
+    IPAddress subnet_mask   = {DEFAULT_WIFI_SUBNET_MASK[0], DEFAULT_WIFI_SUBNET_MASK[1], DEFAULT_WIFI_SUBNET_MASK[2], DEFAULT_WIFI_SUBNET_MASK[3]};
+    IPAddress primary_DNS   = {DEFAULT_WIFI_PRIMARY_DNS[0], DEFAULT_WIFI_PRIMARY_DNS[1], DEFAULT_WIFI_PRIMARY_DNS[2], DEFAULT_WIFI_PRIMARY_DNS[3]};
+    IPAddress secondary_DNS = {DEFAULT_WIFI_SECONDARY_DNS[0], DEFAULT_WIFI_SECONDARY_DNS[1], DEFAULT_WIFI_SECONDARY_DNS[2], DEFAULT_WIFI_SECONDARY_DNS[3]};
+    boolean is_static_IP    = DEFAULT_WIFI_IS_STATIC_IP;
+    boolean is_station_mode = DEFAULT_WIFI_MODE_STATION;
+    // Soft AP
+    char softap_ssid[MAX_SSID + 1] = DEFAULT_WIFI_SOFTAP_SSID;
+    char softap_pwd[MAX_PWD + 1]   = DEFAULT_WIFI_SOFTAP_PASSWORD;
+    IPAddress softap_local_IP      = {DEFAULT_WIFI_SOFTAP_LOCAL_IP_ADDRESS[0], DEFAULT_WIFI_SOFTAP_LOCAL_IP_ADDRESS[1], DEFAULT_WIFI_SOFTAP_LOCAL_IP_ADDRESS[2], DEFAULT_WIFI_SOFTAP_LOCAL_IP_ADDRESS[3]};
+    IPAddress softap_gateway_IP    = {DEFAULT_WIFI_SOFTAP_GATEWAY_IP_ADDRESS[0], DEFAULT_WIFI_SOFTAP_GATEWAY_IP_ADDRESS[1], DEFAULT_WIFI_SOFTAP_GATEWAY_IP_ADDRESS[2], DEFAULT_WIFI_SOFTAP_GATEWAY_IP_ADDRESS[3]};
+    IPAddress softap_subnet_mask   = {DEFAULT_WIFI_SOFTAP_SUBNET_MASK[0], DEFAULT_WIFI_SOFTAP_SUBNET_MASK[1], DEFAULT_WIFI_SOFTAP_SUBNET_MASK[2], DEFAULT_WIFI_SOFTAP_SUBNET_MASK[3]};
+    char host_name[MAX_SSID + 1]   = DEFAULT_WIFI_HOST_NAME;
+  };
+  wifiData_t wifiData;
 
-		// }
-	}
+ private:
+  uint8_t connection_retries = 0;
 
-	void connect();
-	void connect(char* ssid, char* pwd);
+ public:
+  WiFiClass *_WiFi;
+  const String version = EXPRESS_CONSOLE_WIFI_VER;
 
-	void defaultSettings() {
-		wifi_data.ssid = "wifi";
-		wifi_data.pwd = "password";
-		delay(500);
-		saveSettings();
-	}
+  vector<menu_item *> WIFI_MENU;
 
-	void printInfo() {
-		console->v().p("wifi_info\t\t").pln("\t@TODO.");
-	}
+  char **ssidList = NULL;
+  int numSSID;
 
-	void printHelp() {
-		console->v().p("   ").p("wifi_ssid").p("\t\t").pln("Set WiFi SSID.");
-		console->v().p("   ").p("wifi-password").p("\t").pln("Set WiFi password.");
-		console->v().p("   ").p("wifi-default").p("\t\t").pln("reset WiFi settings.");
-	}
+  static void wifi_event(WiFiEvent_t event, WiFiEventInfo_t info);
+  void wifi_event_disconnected();
 
+  void init(WiFiClass *WiFi);
+  void update();
+
+  void default_settings();
+  void print_settings();
+
+  void establish_connection();
+
+  void save_settings();
+
+  // scan for WiFi networks and save only those with unique SSIDs
+  void scan();
+
+  struct menu_wifi_ssid;
+  menu_wifi_ssid *_menu_wifi_ssid;
+  struct menu_wifi_password;
+  menu_wifi_password *_menu_wifi_password;
+  struct menu_wifi_info;
+  menu_wifi_info *_menu_wifi_info;
+  struct menu_wifi_reconnect;
+  menu_wifi_reconnect *_menu_wifi_reconnect;
+  struct menu_wifi_defaults;
+  menu_wifi_defaults *_menu_wifi_defaults;
+
+  struct menu_wifi_sta;
+  struct menu_wifi_static;
+  struct menu_wifi_local_ip;
+  struct menu_wifi_gatway_ip;
+  struct menu_wifi_subnetmask;
+
+  struct menu_wifi_primaryDNS;
+  struct menu_wifi_secondaryDNS;
+
+  struct menu_wifi_softap_local_ip;
+  struct menu_wifi_softap_gatway_ip;
+
+  struct menu_sub_wifi;
+  menu_sub_wifi *_menu_sub_wifi;
+
+  const char *system_event_id_cstr[21] = {
+      "WIFI_READY",             /**< ESP32 WiFi ready */
+      "SCAN_DONE",              /**< ESP32 finish scanning AP */
+      "STA_START",              /**< ESP32 station start */
+      "STA_STOP",               /**< ESP32 station stop */
+      "STA_CONNECTED",          /**< ESP32 station connected to AP */
+      "STA_DISCONNECTED",       /**< ESP32 station disconnected from AP */
+      "STA_AUTHMODE_CHANGE",    /**< the auth mode of AP connected by ESP32 station changed */
+      "STA_GOT_IP",             /**< ESP32 station got IP from connected AP */
+      "STA_LOST_IP",            /**< ESP32 station lost IP and the IP is reset to 0 */
+      "STA_WPS_ER_SUCCESS",     /**< ESP32 station wps succeeds in enrollee mode */
+      "STA_WPS_ER_FAILED",      /**< ESP32 station wps fails in enrollee mode */
+      "STA_WPS_ER_TIMEOUT",     /**< ESP32 station wps timeout in enrollee mode */
+      "STA_WPS_ER_PIN",         /**< ESP32 station wps pin code in enrollee mode */
+      "STA_WPS_ER_PBC_OVERLAP", /*!< ESP32 station wps overlap in enrollee mode */
+      "AP_START",               /**< ESP32 soft-AP start */
+      "AP_STOP",                /**< ESP32 soft-AP stop */
+      "AP_STACONNECTED",        /**< a station connected to ESP32 soft-AP */
+      "AP_STADISCONNECTED",     /**< a station disconnected from ESP32 soft-AP */
+      "AP_STAIPASSIGNED",       /**< ESP32 soft-AP assign an IP to a connected station */
+      "AP_PROBEREQRECVED",      /**< Receive probe request packet in soft-AP interface */
+      "GOT_IP6",                /**< ESP32 station or ap or ethernet interface v6IP addr is preferred */
+  };
+
+  const char *wl_status_cstr[8] = {
+      "WL_IDLE_STATUS", // = 0
+      "WL_NO_SSID_AVAI",
+      "WL_SCAN_COMPLETED",
+      "WL_CONNECTED",
+      "WL_CONNECT_FAILED",
+      "WL_CONNECTION_LOST",
+      "WL_DISCONNECTED",
+      "WL_NO_SHIELD", // = 255
+  };
 };
-
-
-
+// extern express_wifi exWifi;
+#endif
 #endif
