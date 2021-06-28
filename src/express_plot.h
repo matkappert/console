@@ -83,9 +83,9 @@ class express_plot : public express_console_menu {
     Level last;
     express_plot *_self;
 
-    plotter(express_plot *self) : menu_item({"Plot data to console"}) {
-      this->commands.push_back("p");
-      this->commands.push_back("plot");
+    plotter(express_plot *self) : menu_item({(char *)"Plot data to console"}) {
+      this->commands.push_back((char *)"p");
+      this->commands.push_back((char *)"plot");
       this->_self = self;
     }
     void callback_console(const char *cmd, const char *arg, const uint8_t length, express_console_menu &console) override {
@@ -110,9 +110,9 @@ class express_plot : public express_console_menu {
     int interval = 30;
     typedef void (*callback_t)(void);
     callback_t callback_inter = nullptr;
-    menu_time(int interval) : menu_item({"Plot time interval"}) {
-      this->commands.push_back("t");
-      this->commands.push_back("time");
+    menu_time(int interval) : menu_item({(char *)"Plot time interval"}) {
+      this->commands.push_back((char *)"t");
+      this->commands.push_back((char *)"time");
       this->interval = interval;
     }
     void callback_console(const char *cmd, const char *arg, const uint8_t length, express_console_menu &console) override {
@@ -129,9 +129,9 @@ class express_plot : public express_console_menu {
 
   struct menu_interrupt : menu_item {
     express_plot *_self;
-    menu_interrupt(express_plot *self) : menu_item({"Interrupt plot time"}) {
-      this->commands.push_back("i");
-      this->commands.push_back("inter");
+    menu_interrupt(express_plot *self) : menu_item({(char *)"Interrupt plot time"}) {
+      this->commands.push_back((char *)"i");
+      this->commands.push_back((char *)"inter");
       this->_self = self;
     }
     void callback_console(const char *cmd, const char *arg, const uint8_t length, express_console_menu &console) override {
