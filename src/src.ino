@@ -1,104 +1,84 @@
-#include "express_console_menu.h"
-express_console_menu console = express_console_menu();
+#include <Arduino.h>
+// #include <WiFi.h>
 
+#include "Configuration.h"
+
+#if (USE_WIFI == true)
+  #include <WiFi.h>
+#endif
+// extern const int A = 1;
+// extern const int A = 1;
+
+// #include <unordered_map>
 
 #include "express_status_led.h"
 express_status_led status = express_status_led();
 void statusCallback() {
-	status.callback();
+  status.callback();
 };
 
+#include "express_console_menu.h"
+  // express_console_menu console = express_console_menu();
 
-#include "express_wifi.h"
-express_wifi wifi = express_wifi();
+#include "express_nvs.h"
+  // express_nvs nvs = express_nvs();
+  // extern const int A           = 1;
+  // express_console_menu console = express_console_menu();
+  // express_nvs nvs = express_nvs();
+  // express_nvs nvs = nvs;
+  // on="" delay="2000" blink="12" delay="2000" reboot=""
 
-
-void stateCallback( const char *cmd, const char *arg, const uint8_t length) {
-	console.v().p("State: ").pln(status.state);
-};
-void flipCallback( const char *cmd, const char *arg, const uint8_t length) {
-	status.flip();
-};
-void onCallback( const char *cmd, const char *arg, const uint8_t length) {
-	status.on();
-};
-void offCallback( const char *cmd, const char *arg, const uint8_t length) {
-	status.off();
-};
-
-void blinkCallback( const char *cmd, const char *arg, const uint8_t length) {
-	uint8_t value = strtol(arg, nullptr, 10);
-	status.blink(value);
-};
-
-void errorCallback( const char *cmd, const char *arg, const uint8_t length) {
-	uint8_t value = strtol(arg, nullptr, 10);
-	status.error(value);
-};
-
-
-cmd_t commands[] = {
-	{"g", "get", stateCallback, "\tRead LED state"},
-	{"f", "flip", flipCallback, "\tFlip status LED"},
-	{"1", "on", onCallback, "\tTurn on status LED"},
-	{"0", "off", offCallback, "\tTurn off status LED"},
-	{"", "blink", blinkCallback, "\tBlink status LED (n) times a sec [1-12]"},
-	{"", "error", errorCallback, "\tFlash error code (n) times [1-10]"},
-};
-
-
-void printHelp() {
-	console.v().pln("<<------------------------------------------>>");
-	wifi.printHelp();
-}
+// #include "esp_event_legacy.h"
 
 
 void setup() {
-	Serial.begin(115200);
-	delay(500);
-	console.init(Serial, commands, sizeof(commands) / sizeof(cmd_t), /*PROMPT*/true);
+  Serial.begin(BAUDRATE);
+  delay(100);
 
-	console.version = {1, 2, 3};
-	// console.setFilter(Level::vvvv);
-	console.printHelpCallback = printHelp;
+  // init(Print &printer, const cmd_t* commands, size_t num, bool _prompt =
+  // true, bool _eeprom = true, express_console_menu &self)
+  // express_nvs::getInstance().init();
 
+  //   console.init(console, Serial, nullptr, &nvs, 0, /*PROMPT*/ true);
+  // console.init(console, Serial, nullptr, 0, /*PROMPT*/ true);
+  express_console_menu::getInstance().init(Serial, nullptr, 0, /*PROMPT*/ true);
 
-	status.init( 21, false, statusCallback);
-	// status.blink(4);
+  express_console_menu::getInstance().version = {1, 2, 3};
+  // console.setFilter(Level::vvvv);
 
-	// status.addTask( 0, TASK::BLINK, 1 );
-	// status.addTask( 1, TASK::BLINK, 4 );
-	// status.addTask( 2, TASK::BLINK, 8 );
-	// status.addTask( 3, TASK::BLINK, 16 );
+  // status.init(21, false, statusCallback);
 
-	// delay(5000);
-	// status.removeTask( 0 );
+#if (USE_WIFI == true)
+  express_wifi::getInstance().init(&WiFi);
+#endif
 
-	// delay(5000);
-	// status.removeTask( 1 );
+  // status.blink(4);
 
-	// delay(5000);
-	// status.removeTask( 2 );
+  // status.addTask( 0, TASK::BLINK, 1 );
+  // status.addTask( 1, TASK::BLINK, 4 );
+  // status.addTask( 2, TASK::BLINK, 8 );
+  // status.addTask( 3, TASK::BLINK, 16 );
 
-	// delay(5000);
-	// status.addTask( 0, TASK::BLINK, 1 );
-	// delay(5000);
-	// status.removeTask( 0 );
+  // delay(5000);
+  // status.removeTask( 0 );
 
-	// status.removeTask( 3 );
+  // delay(5000);
+  // status.removeTask( 1 );
 
-	// status.removeAllTasks();
-	// 
-	// 
-	wifi.console = &console;
-	wifi.status = &status;
+  // delay(5000);
+  // status.removeTask( 2 );
 
-	wifi.init();
-	wifi.connect("LittleHouse", "appletree");
+  // delay(5000);
+  // status.addTask( 0, TASK::BLINK, 1 );
+  // delay(5000);
+  // status.removeTask( 0 );
 
+  // status.removeTask( 3 );
+
+  // status.removeAllTasks();
+  express_console_menu::getInstance().MENU_POINTER.assign(express_console_menu::getInstance().MENU_ITEMS.begin(), express_console_menu::getInstance().MENU_ITEMS.end());
 }
 
 void loop() {
-	console.update(/*ECHO*/true);
-	wifi.update();
+  express_console_menu::getInstance().update(/*ECHO*/ true);
 }

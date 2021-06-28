@@ -16,7 +16,7 @@ AlwaysBreakBeforeMultilineStrings: 'true'
 BinPackArguments: 'false'
 BinPackParameters: 'true'
 Cpp11BracedListStyle: 'true'
-ColumnLimit: 250
+ColumnLimit: 300
 IndentCaseLabels: 'true'
 IndentPPDirectives: BeforeHash
 JavaScriptQuotes: Double
