@@ -6,16 +6,21 @@
     @repo       github.com/matkappert/express
     @date       20/06/21
 */
-  #define EXPRESS_NVS_VER "1.0.0"
+  #define EXPRESS_NVS_VER "1.1.0"
 
   #include <Arduino.h>
 
-  #include "Configuration.h"
+  #include "Settings.h"
 
   #ifndef USE_NVS
     #define USE_NVS true
   #endif
   #if (USE_NVS == true)
+/*
+ * Forward-Declarations
+ */
+struct express_nvs;
+extern express_nvs eNvs;
 
     #include <string>
 
@@ -23,21 +28,8 @@
     #include "nvs_flash.h"
     #define STORAGE_NAMESPACE "storage"
 
-// Singleton design for C++ 11
-// https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
 struct express_nvs {
  public:
-  static express_nvs &getInstance() {
-    static express_nvs instance;  // Guaranteed to be destroyed.
-    return instance;              // Instantiated on first use.
-  }
-
- private:
-  express_nvs() {}  // Constructor? (the {} brackets) are needed here.
- public:
-  express_nvs(express_nvs const &) = delete;
-  void operator=(express_nvs const &) = delete;
-
   const String version = EXPRESS_NVS_VER;
 
  private:

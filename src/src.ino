@@ -1,7 +1,7 @@
 #include <Arduino.h>
 // #include <WiFi.h>
 
-#include "Configuration.h"
+#include "Settings.h"
 
 #if (USE_WIFI == true)
   #include <WiFi.h>
@@ -11,16 +11,16 @@
 
 // #include <unordered_map>
 
-#include "express_status_led.h"
-express_status_led status = express_status_led();
-void statusCallback() {
-  status.callback();
-};
+// #include "express_status_led.h"
+// express_status_led status = express_status_led();
+// void statusCallback() {
+//   status.callback();
+// };
 
 #include "express_console_menu.h"
   // express_console_menu console = express_console_menu();
 
-#include "express_nvs.h"
+// #include "express_nvs.h"
   // express_nvs nvs = express_nvs();
   // extern const int A           = 1;
   // express_console_menu console = express_console_menu();
@@ -41,15 +41,18 @@ void setup() {
 
   //   console.init(console, Serial, nullptr, &nvs, 0, /*PROMPT*/ true);
   // console.init(console, Serial, nullptr, 0, /*PROMPT*/ true);
-  express_console_menu::getInstance().init(Serial, nullptr, 0, /*PROMPT*/ true);
+  eMenu.init(Serial);
 
-  express_console_menu::getInstance().version = {1, 2, 3};
+  eMenu.version = {1, 2, 3};
   // console.setFilter(Level::vvvv);
 
   // status.init(21, false, statusCallback);
 
 #if (USE_WIFI == true)
-  express_wifi::getInstance().init(&WiFi);
+  eWifi.init(&WiFi);
+#endif
+#if (USE_PLOT == true)
+  ePlot.init();
 #endif
 
   // status.blink(4);
@@ -76,9 +79,9 @@ void setup() {
   // status.removeTask( 3 );
 
   // status.removeAllTasks();
-  express_console_menu::getInstance().MENU_POINTER.assign(express_console_menu::getInstance().MENU_ITEMS.begin(), express_console_menu::getInstance().MENU_ITEMS.end());
+  eMenu.MENU_POINTER.assign(eMenu.MENU_ITEMS.begin(), eMenu.MENU_ITEMS.end());
 }
 
 void loop() {
-  express_console_menu::getInstance().update(/*ECHO*/ true);
+  eMenu.update();
 }

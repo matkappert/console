@@ -1,3 +1,4 @@
+#pragma once
 /*
     @file       express_plot.h
     @author     matkappert
@@ -5,11 +6,17 @@
     @version    V1.0.0
     @date       05/06/21
 */
-
-#ifndef __EXPRESS_PLOT_H
-#define __EXPRESS_PLOT_H
+#define EXPRESS_PLOT_VER "1.1.0"
 
 #include <Arduino.h>
+
+#include "Settings.h"
+/*
+ * Forward-Declarations
+ */
+struct express_plot;
+extern express_plot ePlot;
+
 // #include <unordered_map>
 #include <vector>
 using std::vector;
@@ -17,15 +24,13 @@ using std::vector;
 #include "express_console.h"
 #include "express_console_menu.h"
 
-
-class express_plot;
-
-class express_plot : public express_console_menu {
+class express_plot{
+ public:
+  const String version = EXPRESS_PLOT_VER;
 
  private:
-  express_console_menu *_console;
-  express_plot *_self;
   long int lastPlotted;
+  int interval = DEFAULT_INTERVAL;
 
  public:
   typedef void (*callback_t)(void);
@@ -42,7 +47,7 @@ class express_plot : public express_console_menu {
   };
   vector<plots_stu *> plots;
 
-  void init(express_plot &self, express_console_menu &console, int interval);
+  void init(int interval = DEFAULT_INTERVAL);
   void update();
 
   void add(String name, int *value_ptr, float offset = 0, float multiplier = 1.0) {
@@ -71,76 +76,13 @@ class express_plot : public express_console_menu {
 
   struct plotter;
   plotter *_plotter;
-
   struct menu_time;
-  menu_time *_time;
-
+  // menu_time *_time;
   struct menu_interrupt;
-  menu_interrupt *_menu_interrupt;
+  // menu_interrupt *_menu_interrupt;
 
-  struct plotter : menu_item {
-    bool isPlotting = false;
-    Level last;
-    express_plot *_self;
 
-    plotter(express_plot *self) : menu_item({(char *)"Plot data to console"}) {
-      this->commands.push_back((char *)"p");
-      this->commands.push_back((char *)"plot");
-      this->_self = self;
-    }
-    void callback_console(const char *cmd, const char *arg, const uint8_t length, express_console_menu &console) override {
-      if (this->isPlotting == false) {
-        this->last = console._filter_level;
-        console.setFilter(Level::p);
-        this->isPlotting = true;
-        console.MENU_POINTER.clear();
-        console.newSubMenu();
-        console.MENU_POINTER.push_back(this);
-        console.MENU_POINTER.push_back(_self->_time);
-        console.MENU_POINTER.push_back(_self->_menu_interrupt);
-      } else {
-        console.setFilter(this->last);
-        this->isPlotting = false;
-        console.v().p("verbose: ").pln((int)console._filter_level);
-      }
-    }
-  };
-
-  struct menu_time : menu_item {
-    int interval = 30;
-    typedef void (*callback_t)(void);
-    callback_t callback_inter = nullptr;
-    menu_time(int interval) : menu_item({(char *)"Plot time interval"}) {
-      this->commands.push_back((char *)"t");
-      this->commands.push_back((char *)"time");
-      this->interval = interval;
-    }
-    void callback_console(const char *cmd, const char *arg, const uint8_t length, express_console_menu &console) override {
-      if (length > 0) {
-        this->interval = strtol(arg, nullptr, 10);
-      } else {
-        console.vvv().p("Time: ").p(this->interval).pln("ms.");
-      }
-    }
-    int GETinterval() {
-      return this->interval;
-    }
-  };
-
-  struct menu_interrupt : menu_item {
-    express_plot *_self;
-    menu_interrupt(express_plot *self) : menu_item({(char *)"Interrupt plot time"}) {
-      this->commands.push_back((char *)"i");
-      this->commands.push_back((char *)"inter");
-      this->_self = self;
-    }
-    void callback_console(const char *cmd, const char *arg, const uint8_t length, express_console_menu &console) override {
-      _self->_print();
-    }
-  };
 
  private:
   void _print();
 };
-
-#endif

@@ -2,11 +2,14 @@
     @file       express_console_menu.cpp
     @author     matkappert
     @repo       github.com/matkappert/express
-    @version    V2.2.0
     @date       26/09/20
 */
 
 #include "express_console_menu.h"
+
+#include "Settings.h"
+
+express_console_menu eMenu;  // global-scoped variable
 
 /*
   MENU: INFO
@@ -15,72 +18,80 @@ struct express_console_menu::info : menu_item {
   info() : menu_item({(char *)"Displays firmware info."}) {
     this->commands.push_back((char *)"i");
     this->commands.push_back((char *)"info");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    console->printBox(true);
-    console->v().pln("   INFO:").pln();
-    console->v().p("   ").p("FW version").p(":\t\t").p(console->version.major).p(".").p(console->version.minor).p(".").p(console->version.patch).pln();
-    console->v().p("   ").p("Build date").p(":\t\t").pln(__TIMESTAMP__);
-    console->v().p("   ").p("GCC version").p(":\t\t").pln(__VERSION__);
+    eMenu.printBox(true);
+    eMenu.v().pln("   INFO:").pln();
+    eMenu.v().p("   ").p("FW version").p(":\t\t").p(eMenu.version.major).p(".").p(eMenu.version.minor).p(".").p(eMenu.version.patch).pln();
+    eMenu.v().p("   ").p("Build date").p(":\t\t").pln(__TIMESTAMP__);
+    eMenu.v().p("   ").p("GCC version").p(":\t\t").pln(__VERSION__);
 
-    console->v().pln().pln("   Express Modules:");
-    console->v().p("   ").p("Menu").p(":\t\t").pln(EXPRESS_CONSOLE_MENU_VER);
+    eMenu.v().pln().pln("   Express Modules:");
+    eMenu.v().p("   ").p("Menu").p(":\t\t").pln(EXPRESS_CONSOLE_MENU_VER);
 #if (USE_NVS == true)
-    console->v().p("   ").p("NVS").p(":\t\t\t").pln(express_nvs::getInstance().version);
+    eMenu.v().p("   ").p("NVS").p(":\t\t\t").pln(eNvs.version);
 #endif
-    #if (USE_WIFI == true)
-          console->v().p("   ").p("WiFi").p(":\t\t").pln(express_wifi::getInstance().version);
-    #endif
+#if (USE_WIFI == true)
+    eMenu.v().p("   ").p("WiFi").p(":\t\t").pln(eWifi.version);
+#endif
+#if (USE_PLOT == true)
+    eMenu.v().p("   ").p("WiFi").p(":\t\t").pln(ePlot.version);
+#endif
 
 #if defined(ESP8266) || defined(ESP8285)
-    console->v().pln().pln("   ESP8266:");
+    eMenu.v().pln().pln("   ESP8266:");
     uint32_t realSize   = ESP.getFlashChipRealSize();
     uint32_t ideSize    = ESP.getFlashChipSize();
     FlashMode_t ideMode = ESP.getFlashChipMode();
-    console->v().p("   ").p("Flash ID").p(":\t\t").pln(ESP.getFlashChipId());
-    console->v().p("   ").p("Flash size").p(":\t\t").pln(realSize);
-    console->v().p("   ").p("Flash state").p(":\t\t").pln(ideSize != realSize ? "ERROR: Wrong configuration!" : "OKAY");
-    console->v().p("   ").p("IDE size").p(":\t\t").pln(ideSize);
-    console->v().p("   ").p("IDE speed").p(":\t\t").pln(ESP.getFlashChipSpeed());
-    console->v().p("   ").p("IDE mode").p(":\t\t").pln(ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN");
+    eMenu.v().p("   ").p("Flash ID").p(":\t\t").pln(ESP.getFlashChipId());
+    eMenu.v().p("   ").p("Flash size").p(":\t\t").pln(realSize);
+    eMenu.v().p("   ").p("Flash state").p(":\t\t").pln(ideSize != realSize ? "ERROR: Wrong configuration!" : "OKAY");
+    eMenu.v().p("   ").p("IDE size").p(":\t\t").pln(ideSize);
+    eMenu.v().p("   ").p("IDE speed").p(":\t\t").pln(ESP.getFlashChipSpeed());
+    eMenu.v().p("   ").p("IDE mode").p(":\t\t").pln(ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN");
 #endif
 
 #if defined(ESP32)
-    console->v().pln().pln("   ESP32:");
+
+  #ifdef ARDUINO_VARIANT
+    Serial.print("\nESP32 Board:      ");
+    Serial.print(ARDUINO_VARIANT);
+  #endif
+
+    eMenu.v().pln().pln("   ESP32:");
     uint64_t chipid = ESP.getEfuseMac();  // The chip ID is essentially its MAC address(length: 6 bytes).
-    console->v().p("   ").p("Chip ID").p(":\t\t").p((uint16_t)(chipid >> 32), HEX).pln((uint32_t)chipid, HEX);
+    eMenu.v().p("   ").p("Chip ID").p(":\t\t").p((uint16_t)(chipid >> 32), HEX).pln((uint32_t)chipid, HEX);
 
-    console->printInfo("Chip Model", ESP.getChipModel());
-    console->printInfo("Chip Revision", ESP.getChipRevision());
+    eMenu.printInfo("Chip Model", ESP.getChipModel());
+    eMenu.printInfo("Chip Revision", ESP.getChipRevision());
 
-    console->printInfo("Chip Cores", ESP.getChipCores());
-    console->printInfo("Heap Size", ESP.getHeapSize());
-    console->printInfo("Free Size", ESP.getFreeHeap());
+    eMenu.printInfo("Chip Cores", ESP.getChipCores());
+    eMenu.printInfo("Heap Size", ESP.getHeapSize());
+    eMenu.printInfo("Free Size", ESP.getFreeHeap());
 
-    console->printInfo("Sketch Size", ESP.getSketchSize());
-    console->printInfo("Sketch MD5", ESP.getSketchMD5());
-    console->printInfo("SDK Version", ESP.getSdkVersion());
-    console->printInfo("Free Sketch Space", ESP.getFreeSketchSpace());
+    eMenu.printInfo("Sketch Size", ESP.getSketchSize());
+    eMenu.printInfo("Sketch MD5", ESP.getSketchMD5());
+    eMenu.printInfo("SDK Version", ESP.getSdkVersion());
+    eMenu.printInfo("Free Sketch Space", ESP.getFreeSketchSpace());
 
-    console->printInfo("Flash Chip Size", ESP.getFlashChipSize());
-    console->printInfo("Flash Chip Speed", ESP.getFlashChipSpeed());
-    console->printInfo("Flash Chip Mode", ESP.getFlashChipMode());
-    // console->printInfo("magicFlashChipSize", ESP.magicFlashChipSize(ESP.getFlashChipSize()));
-    // console->printInfo("magicFlashChipSpeed", ESP.magicFlashChipSpeed(ESP.getFlashChipSpeed()));
-    // console->printInfo("magicFlashChipSpeed", ESP.magicFlashChipMode(ESP.getFlashChipMode()));
+    eMenu.printInfo("Flash Chip Size", ESP.getFlashChipSize());
+    eMenu.printInfo("Flash Chip Speed", ESP.getFlashChipSpeed());
+    eMenu.printInfo("Flash Chip Mode", ESP.getFlashChipMode());
+    // eMenu.printInfo("magicFlashChipSize", ESP.magicFlashChipSize(ESP.getFlashChipSize()));
+    // eMenu.printInfo("magicFlashChipSpeed", ESP.magicFlashChipSpeed(ESP.getFlashChipSpeed()));
+    // eMenu.printInfo("magicFlashChipSpeed", ESP.magicFlashChipMode(ESP.getFlashChipMode()));
 
-    // console->v().p("   ").p("ESP-IDF").p(":\t\t").pln(esp_get_idf_version());
-    console->v().p("   ").p("Temprature").p(":\t\t").p((temprature_sens_read() - 32) / 1.8).pln("c");
+    // eMenu.v().p("   ").p("ESP-IDF").p(":\t\t").pln(esp_get_idf_version());
+    eMenu.v().p("   ").p("Temprature").p(":\t\t").p((temprature_sens_read() - 32) / 1.8).pln("c");
 #endif
 #if defined(ESP32) || defined(ESP8266) || defined(ESP8285) && (USE_NVS == true)
     extern int32_t reboot_counter;
-    console->v().pln().pln("   Reboot Counter:");
-    console->v().p("   ").p("Lifetime").p(":\t\t").pln(express_console_menu::getInstance().reboot_counter);
-    console->v().p("   ").p("Resettable").p(":\t\t").pln(express_console_menu::getInstance().reboot_counter_resettable);
+    eMenu.v().pln().pln("   Reboot Counter:");
+    eMenu.v().p("   ").p("Lifetime").p(":\t\t").pln(eMenu.reboot_counter);
+    eMenu.v().p("   ").p("Resettable").p(":\t\t").pln(eMenu.reboot_counter_resettable);
 #endif
 
-    express_console_menu::getInstance().printBox(false);
+    eMenu.printBox(false);
   }
 };
 
@@ -91,21 +102,20 @@ struct express_console_menu::verbose : menu_item {
   verbose() : menu_item({(char *)"Sets the message verbosity level."}) {
     this->commands.push_back((char *)"v");
     this->commands.push_back((char *)"verbose");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length) {
       uint8_t level = strtol(arg, nullptr, 10);
       if (level >= 0 && level < 5) {
-        console->verbosity_level                          = level;
-        express_console_menu::getInstance()._filter_level = (express_console::Level)console->verbosity_level;
-        express_nvs::getInstance().set("verbosity_level", &console->verbosity_level);
-        console->vvv().p("verbose set: ").pln(console->verbosity_level);
+        eMenu.verbosity_level = level;
+        eMenu._filter_level   = (express_console::Level)eMenu.verbosity_level;
+        eNvs.set("verbosity_level", &eMenu.verbosity_level);
+        eMenu.vvv().p("verbose set: ").pln(eMenu.verbosity_level);
       } else {
-        console->v().pln("ERROR: unkown level, pick a rang from 1-4");
+        eMenu.v().pln("ERROR: unkown level, pick a rang from 1-4");
       }
     } else {
-      console->v().p("verbose: ").pln(console->verbosity_level);
+      eMenu.v().p("verbose: ").pln(eMenu.verbosity_level);
     }
   }
 };
@@ -117,10 +127,9 @@ MENU: REBOOT
 struct express_console_menu::reboot : menu_item {
   reboot() : menu_item({(char *)"Reboot system."}) {
     this->commands.push_back((char *)"reboot");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    this->console->v().pln("INFO: Software Rebooting...").pln();
+    eMenu.v().pln("INFO: Software Rebooting...").pln();
     delay(1000);
     ESP.restart();
   }
@@ -133,12 +142,11 @@ MENU: RESET
 struct express_console_menu::reset : menu_item {
   reset() : menu_item({(char *)"reset system settings."}) {
     this->commands.push_back((char *)"reset");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    this->console->v().pln("INFO: Reset system settings...").pln();
-    express_console_menu::getInstance().default_verbosity_level();
-    express_console_menu::getInstance().default_reboot_counter();
+    eMenu.v().pln("INFO: Reset system settings...").pln();
+    eMenu.default_verbosity_level();
+    eMenu.default_reboot_counter();
   }
 };
 
@@ -148,13 +156,12 @@ MENU: FACTORY RESET
 struct express_console_menu::factory_reset : menu_item {
   factory_reset() : menu_item({(char *)""}) {
     this->commands.push_back((char *)"factory-reset");
-    this->hidden  = true;
-    this->console = &express_console_menu::getInstance();
+    this->hidden = true;
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    this->console->v().pln("INFO: factory resetting the system...").pln();
+    eMenu.v().pln("INFO: factory resetting the system...").pln();
 #if (USE_NVS == true)
-    express_nvs::getInstance().erase_all();
+    eNvs.erase_all();
   #if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
     delay(1000);
     ESP.restart();
@@ -171,12 +178,11 @@ struct express_console_menu::halt : menu_item {
     this->commands.push_back((char *)"delay");
     this->commands.push_back((char *)"sleep");
     this->commands.push_back((char *)"halt");
-    this->hidden  = true;
-    this->console = &express_console_menu::getInstance();
+    this->hidden = true;
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     uint32_t value = strtol(arg, nullptr, 10);
-    console->v().p("delay(").p(value).p(")...").pln();
+    eMenu.v().p("delay(").p(value).p(")...").pln();
     delay(value);
   }
 };
@@ -187,10 +193,9 @@ MENU: EXIT
 struct express_console_menu::exit_sub : menu_item {
   exit_sub() : menu_item({(char *)"return from sub menu"}) {
     this->commands.push_back((char *)"exit");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    console->MENU_POINTER.assign(console->MENU_ITEMS.begin(), console->MENU_ITEMS.end());
+    eMenu.MENU_POINTER.assign(eMenu.MENU_ITEMS.begin(), eMenu.MENU_ITEMS.end());
   }
 };
 
@@ -203,93 +208,66 @@ struct help : menu_item {
   help() : menu_item({(char *)"Displays a list of the available commands."}) {
     this->commands.push_back((char *)"?");
     this->commands.push_back((char *)"help");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    console->printBox(true);
-    console->v().pln("   OPTIONS:").pln();
-    for (auto &item : console->MENU_POINTER) {
+    eMenu.printBox(true);
+    eMenu.v().pln("   OPTIONS:").pln();
+    for (auto &item : eMenu.MENU_POINTER) {
       char cmds[30] = "";
       if (item->hidden == false) {
         uint8_t cmd_counter = 0;
-         for (auto &command : item->commands) {
-           cmd_counter++;
-            strcat(cmds, command);
-           if (cmd_counter < item->commands.size()){
-             strcat(cmds, ", ");
-           }
+        for (auto &command : item->commands) {
+          cmd_counter++;
+          strcat(cmds, command);
+          if (cmd_counter < item->commands.size()) {
+            strcat(cmds, ", ");
+          }
         }
-        express_console_menu::getInstance().printInfo(cmds, item->help);
-        // console->v().p("\t\t").pln();
+        eMenu.printInfo(cmds, item->help);
+        // eMenu.v().p("\t\t").pln();
       }
     }
-    console->printBox(false);
+    eMenu.printBox(false);
   }
 };
-};
+};  // namespace MENU
 
-void express_console_menu::init(Print &printer, const cmd_t *commands, size_t num, bool _prompt) {
+void express_console_menu::init(Print &printer) {
   _bufferLen = 0;
-  _commands  = commands;
-  _num       = num;
-  // _eeprom    = eeprom;
-  _printer = &printer;
-  _stream  = (Stream *)&printer;
+  _printer   = &printer;
+  _stream    = (Stream *)&printer;
 
   delay(100);
   v().pln();
   v().pln();
 
-  //   if (_eeprom) {
-  // #ifdef ESP32
-  //     if (!EEPROM.begin(512)) {
-  //       v().pln("ERROR! failed to initialise EEPROM");
-  //       while (true) {
-  //         delay(500);
-  //       }
-  //     }
-  // #elif defined(ESP8266) || defined(ESP8285)
-  //     EEPROM.begin(512);
-  // #endif
-  //     EEPROM.get(__EXPRESS_CONSOLE_MENU_LEVEL_INDEX, menu_data);
-  //     if (menu_data.CRC != crc16()) {
-  //       v().pln("ERROR: EEPROM corrupt, loading defaults");
-  //       defaultSettings();
-  //     } else {
-  //       p("level: ").pln(menu_data.level);
-  // setLevel((uint8_t)menu_data.level);
-  //     }
-  //   }
-  // setLevel(4);
   MENU_ITEMS.push_back(new MENU::help());
   MENU_ITEMS.push_back(new info());
   MENU_ITEMS.push_back(new verbose());
   MENU_ITEMS.push_back(new reset());
   MENU_ITEMS.push_back(new factory_reset());
 #if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
-      MENU_ITEMS.push_back(new reboot());
+  MENU_ITEMS.push_back(new reboot());
 #endif
   MENU_ITEMS.push_back(new halt());
 
   nvs_init();
 
-  if (_prompt) {
-    prompt();
-  }
+
 }
 
 void express_console_menu::nvs_init() {
 #if (USE_NVS == true)
   vvvv().pln("express_console_menu::nvs_init() ...");
-  express_nvs::getInstance().init();
+  eNvs.init();
   esp_err_t err;
 
   //
   // verbosity_level
-  err = express_nvs::getInstance().get("verbosity_level", &verbosity_level);
+  err = eNvs.get("verbosity_level", &verbosity_level);
   if (err == ESP_OK) {
-    vvvv().p("_filter_level ").pln((uint8_t)express_console_menu::getInstance()._filter_level);
-    express_console_menu::getInstance()._filter_level = (express_console::Level)verbosity_level;
+    vvvv().p("_filter_level ").pln((uint8_t)eMenu._filter_level);
+    eMenu._filter_level = (express_console::Level)verbosity_level;
   } else {
     v().pln("ERROR: restoring defaults for verbosity_level");
     default_verbosity_level();
@@ -297,12 +275,12 @@ void express_console_menu::nvs_init() {
 
   //
   // restart_conters
-  express_nvs::getInstance().get("reboot_cnt", &reboot_counter);
+  eNvs.get("reboot_cnt", &reboot_counter);
   reboot_counter++;
-  express_nvs::getInstance().set("reboot_cnt", &reboot_counter);
-  express_nvs::getInstance().get("reboot_cnt_rst", &reboot_counter_resettable);
+  eNvs.set("reboot_cnt", &reboot_counter);
+  eNvs.get("reboot_cnt_rst", &reboot_counter_resettable);
   reboot_counter_resettable++;
-  express_nvs::getInstance().set("reboot_cnt_rst", &reboot_counter_resettable);
+  eNvs.set("reboot_cnt_rst", &reboot_counter_resettable);
 
   vvvv().pln("express_console_menu::nvs_init() ... done");
 #else
@@ -322,48 +300,15 @@ void express_console_menu::newSubMenu(vector<menu_item *> sub) {
   MENU_POINTER.insert(MENU_POINTER.begin(), new exit_sub());
 }
 
-// void express_console_menu::setLevel(uint8_t level) {
-//   switch (level) {
-//     case 0:
-//       _filter_level   = Level::p;
-//       verbosity_level = 0;
-//       break;
-//     case 1:
-//       _filter_level   = Level::v;
-//       verbosity_level = 1;
-//       break;
-//     case 2:
-//       _filter_level   = Level::vv;
-//       verbosity_level = 2;
-//       break;
-//     case 3:
-//       _filter_level   = Level::vvv;
-//       verbosity_level = 3;
-//       break;
-//     case 4:
-//       _filter_level   = Level::vvvv;
-//       verbosity_level = 4;
-//       break;
-//     default:
-//       _filter_level   = Level::vvvv;
-//       verbosity_level = 4;
-//       break;
-//   }
-// }
-
-void express_console_menu::update(bool _echo) {
+void express_console_menu::update() {
   while (_stream->available()) {
     char in = _stream->read();
-    if (_echo) {
-      if (express_console_menu::getInstance()._filter_level > Level::p) {
-        _printer->write(in);
-      }
-    }
+
     if (_bufferLen == 0 && in == ' ') {
       // trim
     } else if (in == '\r' || in == '\n') {
       if (in == '\r') {
-        if (express_console_menu::getInstance()._filter_level > Level::p) {
+        if (eMenu._filter_level > Level::p) {
           _printer->write('\n');
         }
       } else if (_bufferLen == 0) {
@@ -374,18 +319,27 @@ void express_console_menu::update(bool _echo) {
       // finish command
       _buffer[_bufferLen] = '\0';
 
+// echo the command back
+#if (DEFAULT_MENU_ECHO == true)
+      // @TODO: save echo in nvs
+      if (eMenu._filter_level > Level::p) {
+        v().pln().p("-> ").pln(_buffer);
+      }
+#endif
+
       // process it
       if (_bufferLen > 0) {
         processCommand(_buffer);
       }
 
       // start again
-      prompt();
+      _bufferLen = 0;
+
       break;
     } else if ((in == 0x7F) || (in == '\b')) {
       // backspace
       if (_bufferLen > 0) {
-        if (express_console_menu::getInstance()._filter_level > Level::p) {
+        if (eMenu._filter_level > Level::p) {
           --_bufferLen;
           _printer->write("\b \b", 3);
         }
@@ -445,11 +399,11 @@ void express_console_menu::processFunction(const char *cmd, const char *arg, con
       if (strcmp(command, cmd) == 0) {
         vvvv().p("command: \"").p(command).pln("\" = true");
         matched = true;
-        if ((void (*)())(item->*(&menu_item::callback_console)) != (void (*)())(&menu_item::callback_console)) {
-          item->callback_console(cmd, arg, length, express_console_menu::getInstance());
-        } else {
-          item->callback(cmd, arg, length);
-        }
+        // if ((void (*)())(item->*(&menu_item::callback_console)) != (void (*)())(&menu_item::callback_console)) {
+        //   item->callback_console(cmd, arg, length, eMenu);
+        // } else {
+        item->callback(cmd, arg, length);
+        // }
         break;
       } else {
         vvvv().p("command: \"").p(command).pln("\" = false");
@@ -462,9 +416,3 @@ void express_console_menu::processFunction(const char *cmd, const char *arg, con
   }
 }
 
-void express_console_menu::prompt() {
-  _bufferLen = 0;
-  if (_filter_level > Level::p) {
-    v().p("~ $ ");
-  }
-}

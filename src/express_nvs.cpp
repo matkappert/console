@@ -2,14 +2,16 @@
     @file       express_nvs.h
     @author     matkappert
     @repo       github.com/matkappert/express
-    @version    V1.0.0
     @date       19/6/21
 */
 
+#include "Settings.h"
 #include "express_nvs.h"
 
 #if (USE_NVS == true)
   #include "express_console_menu.h"
+
+express_nvs eNvs;  // global-scoped variable
 
 // #if defined(using_console_menu) || defined(using_console)
 void express_nvs::init() {
@@ -19,11 +21,11 @@ void express_nvs::init() {
   //   extern express_nvs nvs;
   //   _self = &nvs;
 
-  express_console_menu::getInstance().vvvv().pln("express_nvs::init()");
+  eMenu.vvvv().pln("express_nvs::init()");
 
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    express_console_menu::getInstance().v().pln("ERROR->express_nvs::init() NVS partition was truncated and needs to be erased");
+    eMenu.v().pln("ERROR->express_nvs::init() NVS partition was truncated and needs to be erased");
     // NVS partition was truncated and needs to be erased
     // Retry nvs_flash_init
     ESP_ERROR_CHECK(nvs_flash_erase());
@@ -56,9 +58,9 @@ esp_err_t express_nvs::erase_all() {
 esp_err_t express_nvs::open(nvs_handle_t *my_handle, esp_err_t *err, const char *key) {
   *err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, my_handle);
   if (*err != ESP_OK) {
-    express_console_menu::getInstance().v().p("ERROR->express_nvs::open() ").pln(esp_err_to_name(*err));
+    eMenu.v().p("ERROR->express_nvs::open() ").pln(esp_err_to_name(*err));
   } else {
-    express_console_menu::getInstance().vvvv().p("express_nvs::open() ").pln(key);
+    eMenu.vvvv().p("express_nvs::open() ").pln(key);
   }
 }
 // Read Error
@@ -67,10 +69,10 @@ esp_err_t express_nvs::readError(const char *key, esp_err_t *err) {
     *err = ESP_OK;
     return *err;
   } else if (*err == ESP_ERR_NVS_NOT_FOUND) {
-    express_console_menu::getInstance().v().p("ERROR->express_nvs::readError()->").p(key).pln(": The value is not initialized yet!");
+    eMenu.v().p("ERROR->express_nvs::readError()->").p(key).pln(": The value is not initialized yet!");
     return *err;
   } else {
-    express_console_menu::getInstance().v().p("ERROR->express_nvs::readError()->").p(key).p(": ").pln(esp_err_to_name(*err));
+    eMenu.v().p("ERROR->express_nvs::readError()->").p(key).p(": ").pln(esp_err_to_name(*err));
     return *err;
   }
 }
@@ -92,7 +94,7 @@ esp_err_t express_nvs::get(const char *key, void *data, unsigned int *length) {
   nvs_handle_t my_handle;
   esp_err_t err;
 
-  express_console_menu::getInstance().vvvv().p("express_nvs::get(blob)->length:").pln((unsigned int)length);
+  eMenu.vvvv().p("express_nvs::get(blob)->length:").pln((unsigned int)length);
 
   express_nvs::open(&my_handle, &err, key);
 
@@ -112,7 +114,7 @@ esp_err_t express_nvs::set(const char *key, const void *data, unsigned int lengt
   nvs_handle_t my_handle;
   esp_err_t err;
 
-  express_console_menu::getInstance().vvvv().p("express_nvs::set(blob)->length:").pln((unsigned int)length);
+  eMenu.vvvv().p("express_nvs::set(blob)->length:").pln((unsigned int)length);
 
   express_nvs::open(&my_handle, &err, key);
 

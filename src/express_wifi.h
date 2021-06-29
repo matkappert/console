@@ -1,19 +1,25 @@
-#ifndef __EXPRESS_WIFI_H
-#define __EXPRESS_WIFI_H
+#pragma once
 /*
     @file       express_wifi.h
     @author     matkappert
     @repo       github.com/matkappert/express
     @date       14/11/20
 */
-#define EXPRESS_CONSOLE_WIFI_VER "2.2.0"
+#define EXPRESS_CONSOLE_WIFI_VER "2.3.0"
+
 // https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
 // https://randomnerdtutorials.com/solved-reconnect-esp32-to-wifi/
 // https://randomnerdtutorials.com/esp32-set-custom-hostname-arduino/
 // https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/#11
 #include <Arduino.h>
 
-#include "Configuration.h"
+#include "Settings.h"
+
+/*
+ * Forward-Declarations
+ */
+struct express_wifi;
+extern express_wifi eWifi;
 
 #ifndef USE_WIFI
   #define USE_WIFI true
@@ -50,22 +56,22 @@ const int MAX_PWD  = 64;  // max number of characters in WiFi Password
 // Singleton design for C++ 11
 // https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
 struct express_wifi {
- public:
-  typedef void (*callback_t)(void);
+//  public:
+//   typedef void (*callback_t)(void);
 
-  typedef void (*event)(system_event_id_t event, system_event_info_t info);
-  // event EVENT_STA_CONNECTED;
+//   typedef void (*event)(system_event_id_t event, system_event_info_t info);
+//   // event EVENT_STA_CONNECTED;
 
-  static express_wifi &getInstance() {
-    static express_wifi instance;  // Guaranteed to be destroyed.
-    return instance;               // Instantiated on first use.
-  }
+//   static express_wifi &getInstance() {
+//     static express_wifi instance;  // Guaranteed to be destroyed.
+//     return instance;               // Instantiated on first use.
+//   }
 
- private:
-  express_wifi() {}  // Constructor? (the {} brackets) are needed here.
- public:
-  express_wifi(express_wifi const &) = delete;
-  void operator=(express_wifi const &) = delete;
+//  private:
+//   express_wifi() {}  // Constructor? (the {} brackets) are needed here.
+//  public:
+//   express_wifi(express_wifi const &) = delete;
+//   void operator=(express_wifi const &) = delete;
 
  private:
   typedef uint32_t nvs_handle_t;
@@ -121,30 +127,23 @@ struct express_wifi {
   void scan();
 
   struct menu_wifi_ssid;
-  menu_wifi_ssid *_menu_wifi_ssid;
   struct menu_wifi_password;
-  menu_wifi_password *_menu_wifi_password;
   struct menu_wifi_info;
-  menu_wifi_info *_menu_wifi_info;
   struct menu_wifi_reconnect;
-  menu_wifi_reconnect *_menu_wifi_reconnect;
   struct menu_wifi_defaults;
-  menu_wifi_defaults *_menu_wifi_defaults;
-
   struct menu_wifi_sta;
   struct menu_wifi_static;
   struct menu_wifi_local_ip;
   struct menu_wifi_gatway_ip;
   struct menu_wifi_subnetmask;
-
   struct menu_wifi_primaryDNS;
   struct menu_wifi_secondaryDNS;
-
   struct menu_wifi_softap_local_ip;
   struct menu_wifi_softap_gatway_ip;
-
   struct menu_sub_wifi;
-  menu_sub_wifi *_menu_sub_wifi;
+
+
+
 
   const char *system_event_id_cstr[21] = {
       "WIFI_READY",             /**< ESP32 WiFi ready */
@@ -181,6 +180,4 @@ struct express_wifi {
       "WL_NO_SHIELD", // = 255
   };
 };
-// extern express_wifi exWifi;
-#endif
 #endif

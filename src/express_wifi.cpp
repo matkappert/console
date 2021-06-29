@@ -2,7 +2,6 @@
     @file       express_wifi.cpp
     @author     matkappert
     @repo       github.com/matkappert/express_wifi
-    @version    V2.0.0
     @date       14/11/20
 */
 
@@ -14,6 +13,8 @@
     #include <esp_wifi.h>
 
     #include "express_console_menu.h"
+
+express_wifi eWifi;  // global-scoped variable
 
 // WIFI_REASON_UNSPECIFIED              = 1,
 // WIFI_REASON_AUTH_EXPIRE              = 2,
@@ -47,18 +48,18 @@
 // WIFI_REASON_CONNECTION_FAIL          = 205,
 
 void express_wifi::wifi_event(WiFiEvent_t event, WiFiEventInfo_t info) {
-  express_console_menu::getInstance().vvvv().p("Network event: ").pln(express_wifi::getInstance().system_event_id_cstr[(int)event]);
+  eMenu.vvvv().p("Network event: ").pln(eWifi.system_event_id_cstr[(int)event]);
   if (event == SYSTEM_EVENT_STA_DISCONNECTED || event == SYSTEM_EVENT_AP_STADISCONNECTED) {
-    express_console_menu::getInstance().vvvv().p("Reason of disconnection: ").pln(info.disconnected.reason);
+    eMenu.vvvv().p("Reason of disconnection: ").pln(info.disconnected.reason);
     delay(100);
-    express_wifi::getInstance().wifi_event_disconnected();
+    eWifi.wifi_event_disconnected();
     if (info.disconnected.reason <= 24) {
-      express_wifi::getInstance().connection_retries = 0;
-      express_wifi::getInstance().establish_connection();
+      eWifi.connection_retries = 0;
+      eWifi.establish_connection();
     }
   } else if (event == SYSTEM_EVENT_STA_GOT_IP || event == SYSTEM_EVENT_AP_STA_GOT_IP6 || event == SYSTEM_EVENT_AP_STAIPASSIGNED) {
-    express_wifi::getInstance().connection_retries = 0;
-    express_console_menu::getInstance().vvvv().pln("Obtained an IP address");
+    eWifi.connection_retries = 0;
+    eMenu.vvvv().pln("Obtained an IP address");
   }
 }
 
@@ -66,43 +67,42 @@ struct express_wifi::menu_wifi_ssid : menu_item {
   menu_wifi_ssid() : menu_item({(char *)"Set WiFi SSID."}) {
     this->commands.push_back((char *)"s");
     this->commands.push_back((char *)"ssid");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->printBox(true);
-      console->v().pln("   Scanning for Networks...").pln();
-      express_wifi::getInstance().scan();
-      for (int i = 0; i < express_wifi::getInstance().numSSID; i++) {
-        console->v().p("\t").p(i + 1).p(") ").pln(express_wifi::getInstance().ssidList[i]);
+      eMenu.printBox(true);
+      eMenu.v().pln("   Scanning for Networks...").pln();
+      eWifi.scan();
+      for (int i = 0; i < eWifi.numSSID; i++) {
+        eMenu.v().p("\t").p(i + 1).p(") ").pln(eWifi.ssidList[i]);
       }
-      console->printBox(false);
+      eMenu.printBox(false);
 
     } else if (length == 1) {
       int selected = atoi(arg);
-      console->vvvv().p("selected:").pln(selected);
-      if (selected > 0 && selected <= express_wifi::getInstance().numSSID) {
-        express_wifi::getInstance().wifiData.ssid[0] = '\0';
-        strcpy(express_wifi::getInstance().wifiData.ssid, express_wifi::getInstance().ssidList[selected - 1]);
-        console->v().p("New SSID: ").pln(express_wifi::getInstance().wifiData.ssid);
-        express_wifi::getInstance().save_settings();
+      eMenu.vvvv().p("selected:").pln(selected);
+      if (selected > 0 && selected <= eWifi.numSSID) {
+        eWifi.wifiData.ssid[0] = '\0';
+        strcpy(eWifi.wifiData.ssid, eWifi.ssidList[selected - 1]);
+        eMenu.v().p("New SSID: ").pln(eWifi.wifiData.ssid);
+        eWifi.save_settings();
       } else {
-        if (express_wifi::getInstance().numSSID == 0) {
-          console->v().pln("ERROR: scan for WiFi SSID before picking one.");
+        if (eWifi.numSSID == 0) {
+          eMenu.v().pln("ERROR: scan for WiFi SSID before picking one.");
         } else {
-          console->v().p("ERROR: unkown option, pick a rang from 1-").pln(express_wifi::getInstance().numSSID > 9 ? 9 : express_wifi::getInstance().numSSID);
+          eMenu.v().p("ERROR: unkown option, pick a rang from 1-").pln(eWifi.numSSID > 9 ? 9 : eWifi.numSSID);
         }
       }
     } else {
       if (length <= MAX_SSID) {
-        express_wifi::getInstance().wifiData.ssid[0] = '\0';
-        strcpy(express_wifi::getInstance().wifiData.ssid, arg);
+        eWifi.wifiData.ssid[0] = '\0';
+        strcpy(eWifi.wifiData.ssid, arg);
 
-        express_wifi::getInstance().save_settings();
+        eWifi.save_settings();
 
-        console->v().p("New SSID: ").pln(express_wifi::getInstance().wifiData.ssid);
+        eMenu.v().p("New SSID: ").pln(eWifi.wifiData.ssid);
       } else {
-        console->v().p("ERROR: to long! max=").pln(MAX_SSID);
+        eMenu.v().p("ERROR: to long! max=").pln(MAX_SSID);
       }
     }
   }
@@ -112,21 +112,20 @@ struct express_wifi::menu_wifi_password : menu_item {
   menu_wifi_password() : menu_item({(char *)"Set WiFi password."}) {
     this->commands.push_back((char *)"p");
     this->commands.push_back((char *)"pass");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("Password: ").pln(console->mask(express_wifi::getInstance().wifiData.pwd, 2));
+      eMenu.v().p("Password: ").pln(eMenu.mask(eWifi.wifiData.pwd, 2));
     } else {
       if (length <= MAX_PWD) {
-        express_wifi::getInstance().wifiData.pwd[0] = '\0';
-        strcpy(express_wifi::getInstance().wifiData.pwd, arg);
+        eWifi.wifiData.pwd[0] = '\0';
+        strcpy(eWifi.wifiData.pwd, arg);
 
-        express_wifi::getInstance().save_settings();
+        eWifi.save_settings();
 
-        console->v().p("New password: ").pln(console->mask(express_wifi::getInstance().wifiData.pwd, 2));
+        eMenu.v().p("New password: ").pln(eMenu.mask(eWifi.wifiData.pwd, 2));
       } else {
-        console->v().p("ERROR: to long! max=").pln(MAX_PWD);
+        eMenu.v().p("ERROR: to long! max=").pln(MAX_PWD);
       }
     }
   }
@@ -136,20 +135,19 @@ struct express_wifi::menu_wifi_sta : menu_item {
   menu_wifi_sta() : menu_item({(char *)"Station or Access point"}) {
     this->commands.push_back((char *)"sta");
     this->commands.push_back((char *)"station");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("STA Mode: ").pln(express_wifi::getInstance().wifiData.is_station_mode ? "TRUE" : "FALSE");
+      eMenu.v().p("STA Mode: ").pln(eWifi.wifiData.is_station_mode ? "TRUE" : "FALSE");
     } else {
-      isTrue_t value = express_console_menu::getInstance().argIsTrue(arg);
+      isTrue_t value = eMenu.argIsTrue(arg);
       if (value == isError) {
-        console->v().pln("ERROR: unkown input! [true|false]");
+        eMenu.v().pln("ERROR: unkown input! [true|false]");
         return;
       } else {
-        console->v().p("STA Mode: ").pln(value ? "TRUE" : "FALSE");
-        express_wifi::getInstance().wifiData.is_station_mode = value;
-        express_wifi::getInstance().save_settings();
+        eMenu.v().p("STA Mode: ").pln(value ? "TRUE" : "FALSE");
+        eWifi.wifiData.is_station_mode = value;
+        eWifi.save_settings();
       }
     }
   }
@@ -159,20 +157,19 @@ struct express_wifi::menu_wifi_static : menu_item {
   menu_wifi_static() : menu_item({(char *)"Static IP Address"}) {
     this->commands.push_back((char *)"ip");
     this->commands.push_back((char *)"static");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("Static IP Address: ").pln(express_wifi::getInstance().wifiData.is_static_IP ? "Static" : "Auto");
+      eMenu.v().p("Static IP Address: ").pln(eWifi.wifiData.is_static_IP ? "Static" : "Auto");
     } else {
-      isTrue_t value = express_console_menu::getInstance().argIsTrue(arg);
+      isTrue_t value = eMenu.argIsTrue(arg);
       if (value == isError) {
-        console->v().pln("ERROR: unkown input! [true|false]");
+        eMenu.v().pln("ERROR: unkown input! [true|false]");
         return;
       } else {
-        console->v().p("Static IP Address: ").pln(value ? "Static" : "Auto");
-        express_wifi::getInstance().wifiData.is_static_IP = value;
-        express_wifi::getInstance().save_settings();
+        eMenu.v().p("Static IP Address: ").pln(value ? "Static" : "Auto");
+        eWifi.wifiData.is_static_IP = value;
+        eWifi.save_settings();
       }
     }
   }
@@ -182,52 +179,51 @@ struct express_wifi::menu_wifi_info : menu_item {
   menu_wifi_info() : menu_item({(char *)"WiFi Info."}) {
     this->commands.push_back((char *)"i");
     this->commands.push_back((char *)"info");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    console->printBox(true);
-    console->v().pln("   INFO:").pln();
+    eMenu.printBox(true);
+    eMenu.v().pln("   INFO:").pln();
 
     if (WiFi.getMode() == WIFI_MODE_NULL) {
-      console->printInfo("Status", "DISABLED");
+      eMenu.printInfo("Status", "DISABLED");
     } else {
-      console->printInfo("Status", express_wifi::getInstance().wl_status_cstr[(uint8_t)WiFi.status() == 255 ? 7 : (uint8_t)WiFi.status()]);
+      eMenu.printInfo("Status", eWifi.wl_status_cstr[(uint8_t)WiFi.status() == 255 ? 7 : (uint8_t)WiFi.status()]);
     }
 
     if (WiFi.getMode() == WIFI_MODE_STA) {
-      console->printInfo("Mode", "STA");
-      console->printInfo("SSID", WiFi.SSID().c_str());
-      console->printInfo("Password", console->mask(WiFi.psk().c_str(), 2).c_str());
-      console->printInfo("RSSI", WiFi.RSSI());
-      console->printInfo("IPv4 Address", WiFi.localIP().toString().c_str());
-        console->printInfo("IPv6 Address", WiFi.localIPv6().toString().c_str());
-      console->printInfo("Subnet Mask", WiFi.subnetMask().toString().c_str());
-      console->printInfo("Router", WiFi.gatewayIP().toString().c_str());
-      console->v().pln();
-      console->printInfo("MAC Address", WiFi.macAddress().c_str());
-      console->printInfo("Hostname", WiFi.getHostname());
+      eMenu.printInfo("Mode", "STA");
+      eMenu.printInfo("SSID", WiFi.SSID().c_str());
+      eMenu.printInfo("Password", eMenu.mask(WiFi.psk().c_str(), 2).c_str());
+      eMenu.printInfo("RSSI", WiFi.RSSI());
+      eMenu.printInfo("IPv4 Address", WiFi.localIP().toString().c_str());
+        eMenu.printInfo("IPv6 Address", WiFi.localIPv6().toString().c_str());
+      eMenu.printInfo("Subnet Mask", WiFi.subnetMask().toString().c_str());
+      eMenu.printInfo("Router", WiFi.gatewayIP().toString().c_str());
+      eMenu.v().pln();
+      eMenu.printInfo("MAC Address", WiFi.macAddress().c_str());
+      eMenu.printInfo("Hostname", WiFi.getHostname());
 
     } else if (WiFi.getMode() == WIFI_MODE_AP) {
-      console->printInfo("Mode", "AP");
-      console->printInfo("SSID", WiFi.softAPSSID().c_str());
-      console->printInfo("Password", console->mask(express_wifi::getInstance().wifiData.softap_pwd, 2).c_str());
-      console->printInfo("IPv4 Address", WiFi.softAPIP().toString().c_str());
-        console->printInfo("IPv6 Address", WiFi.softAPIPv6().toString().c_str());
-      console->printInfo("MAC Address", WiFi.softAPmacAddress().c_str());
-      console->printInfo("Hostname", WiFi.softAPgetHostname());
+      eMenu.printInfo("Mode", "AP");
+      eMenu.printInfo("SSID", WiFi.softAPSSID().c_str());
+      eMenu.printInfo("Password", eMenu.mask(eWifi.wifiData.softap_pwd, 2).c_str());
+      eMenu.printInfo("IPv4 Address", WiFi.softAPIP().toString().c_str());
+        eMenu.printInfo("IPv6 Address", WiFi.softAPIPv6().toString().c_str());
+      eMenu.printInfo("MAC Address", WiFi.softAPmacAddress().c_str());
+      eMenu.printInfo("Hostname", WiFi.softAPgetHostname());
     }else{
-      console->printInfo("Mode", "UNKNOWN");
+      eMenu.printInfo("Mode", "UNKNOWN");
     }
 
-    console->v().pln();
-    console->printInfo("Auto Connect", WiFi.getAutoConnect() ? "TRUE" : "FALSE");
-    console->printInfo("Auto Reconnect", WiFi.getAutoReconnect() ? "TRUE" : "FALSE");
-    console->printInfo("Modem Sleep", WiFi.getSleep() ? "TRUE" : "FALSE");
-    console->printInfo("TX Power", WiFi.getTxPower());
+    eMenu.v().pln();
+    eMenu.printInfo("Auto Connect", WiFi.getAutoConnect() ? "TRUE" : "FALSE");
+    eMenu.printInfo("Auto Reconnect", WiFi.getAutoReconnect() ? "TRUE" : "FALSE");
+    eMenu.printInfo("Modem Sleep", WiFi.getSleep() ? "TRUE" : "FALSE");
+    eMenu.printInfo("TX Power", WiFi.getTxPower());
 
-    console->printBox(false);
+    eMenu.printBox(false);
 
-    express_wifi::getInstance().print_settings();
+    eWifi.print_settings();
   }
 };
 
@@ -235,20 +231,19 @@ struct express_wifi::menu_wifi_reconnect : menu_item {
   menu_wifi_reconnect() : menu_item({(char *)"Reapply WiFi settings"}) {
     this->commands.push_back((char *)"c");
     this->commands.push_back((char *)"connect");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().pln("Reapply WiFi settings!");
-      express_wifi::getInstance().establish_connection();
+      eMenu.v().pln("Reapply WiFi settings!");
+      eWifi.establish_connection();
     } else {
-      isTrue_t value = express_console_menu::getInstance().argIsTrue(arg);
+      isTrue_t value = eMenu.argIsTrue(arg);
       if (value == isError) {
-        console->v().pln("ERROR: unkown input! [true|false]");
+        eMenu.v().pln("ERROR: unkown input! [true|false]");
         return;
       }
       if (value == isTrue) {
-        express_wifi::getInstance().establish_connection();
+        eWifi.establish_connection();
       } else if (value == isFalse) {
         if (WiFi.getMode() == WIFI_MODE_AP) {
           WiFi.softAPdisconnect(true);
@@ -263,10 +258,9 @@ struct express_wifi::menu_wifi_reconnect : menu_item {
 struct express_wifi::menu_wifi_defaults : menu_item {
   menu_wifi_defaults() : menu_item({(char *)"Default settings"}) {
     this->commands.push_back((char *)"reset");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    express_wifi::getInstance().default_settings();
+    eWifi.default_settings();
   }
 };
 
@@ -274,25 +268,24 @@ struct express_wifi::menu_wifi_local_ip : menu_item {
   menu_wifi_local_ip() : menu_item({(char *)"Set local IP address."}) {
     this->commands.push_back((char *)"l");
     this->commands.push_back((char *)"local");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("local IP: ").pln(express_wifi::getInstance().wifiData.local_IP);
+      eMenu.v().p("local IP: ").pln(eWifi.wifiData.local_IP);
     } else {
       if (length >= 7 || length <= 15) {  // 0.0.0.0 to 000.000.000.000
         IPAddress ipv4;
         bool err = !ipv4.fromString(arg);
-        express_console_menu::getInstance().vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
+        eMenu.vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
         if (err) {
           return;
         }
-        express_wifi::getInstance().wifiData.local_IP = ipv4;
-        express_wifi::getInstance().save_settings();
+        eWifi.wifiData.local_IP = ipv4;
+        eWifi.save_settings();
 
-        console->v().p("New local IP: ").pln(express_wifi::getInstance().wifiData.local_IP);
+        eMenu.v().p("New local IP: ").pln(eWifi.wifiData.local_IP);
       } else {
-        console->v().pln("ERROR: invalid input!");
+        eMenu.v().pln("ERROR: invalid input!");
       }
     }
   }
@@ -302,25 +295,24 @@ struct express_wifi::menu_wifi_gatway_ip : menu_item {
   menu_wifi_gatway_ip() : menu_item({(char *)"Set gateway IP address."}) {
     this->commands.push_back((char *)"g");
     this->commands.push_back((char *)"gateway");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("gateway IP: ").pln(express_wifi::getInstance().wifiData.gateway_IP);
+      eMenu.v().p("gateway IP: ").pln(eWifi.wifiData.gateway_IP);
     } else {
       if (length >= 7 || length <= 15) {  // 0.0.0.0 to 000.000.000.000
         IPAddress ipv4;
         bool err = !ipv4.fromString(arg);
-        express_console_menu::getInstance().vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
+        eMenu.vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
         if (err) {
           return;
         }
-        express_wifi::getInstance().wifiData.gateway_IP = ipv4;
-        express_wifi::getInstance().save_settings();
+        eWifi.wifiData.gateway_IP = ipv4;
+        eWifi.save_settings();
 
-        console->v().p("New gateway IP: ").pln(express_wifi::getInstance().wifiData.gateway_IP);
+        eMenu.v().p("New gateway IP: ").pln(eWifi.wifiData.gateway_IP);
       } else {
-        console->v().pln("ERROR: invalid input!");
+        eMenu.v().pln("ERROR: invalid input!");
       }
     }
   }
@@ -329,25 +321,24 @@ struct express_wifi::menu_wifi_gatway_ip : menu_item {
 struct express_wifi::menu_wifi_subnetmask : menu_item {
   menu_wifi_subnetmask() : menu_item({(char *)"Set subnet mask."}) {
     this->commands.push_back((char *)"subnet");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("Subnet mask: ").pln(express_wifi::getInstance().wifiData.subnet_mask);
+      eMenu.v().p("Subnet mask: ").pln(eWifi.wifiData.subnet_mask);
     } else {
       if (length >= 7 || length <= 15) {  // 0.0.0.0 to 000.000.000.000
         IPAddress ipv4;
         bool err = !ipv4.fromString(arg);
-        express_console_menu::getInstance().vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
+        eMenu.vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
         if (err) {
           return;
         }
-        express_wifi::getInstance().wifiData.subnet_mask = ipv4;
-        express_wifi::getInstance().save_settings();
+        eWifi.wifiData.subnet_mask = ipv4;
+        eWifi.save_settings();
 
-        console->v().p("New subnet mask: ").pln(express_wifi::getInstance().wifiData.subnet_mask);
+        eMenu.v().p("New subnet mask: ").pln(eWifi.wifiData.subnet_mask);
       } else {
-        console->v().pln("ERROR: invalid input!");
+        eMenu.v().pln("ERROR: invalid input!");
       }
     }
   }
@@ -356,25 +347,24 @@ struct express_wifi::menu_wifi_subnetmask : menu_item {
 struct express_wifi::menu_wifi_primaryDNS : menu_item {
   menu_wifi_primaryDNS() : menu_item({(char *)"Set primary DNS address."}) {
     this->commands.push_back((char *)"dns1");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("Primary DNS: ").pln(express_wifi::getInstance().wifiData.primary_DNS);
+      eMenu.v().p("Primary DNS: ").pln(eWifi.wifiData.primary_DNS);
     } else {
       if (length >= 7 || length <= 15) {  // 0.0.0.0 to 000.000.000.000
         IPAddress ipv4;
         bool err = !ipv4.fromString(arg);
-        express_console_menu::getInstance().vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
+        eMenu.vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
         if (err) {
           return;
         }
-        express_wifi::getInstance().wifiData.primary_DNS = ipv4;
-        express_wifi::getInstance().save_settings();
+        eWifi.wifiData.primary_DNS = ipv4;
+        eWifi.save_settings();
 
-        console->v().p("New primary DNS: ").pln(express_wifi::getInstance().wifiData.primary_DNS);
+        eMenu.v().p("New primary DNS: ").pln(eWifi.wifiData.primary_DNS);
       } else {
-        console->v().pln("ERROR: invalid input!");
+        eMenu.v().pln("ERROR: invalid input!");
       }
     }
   }
@@ -383,25 +373,24 @@ struct express_wifi::menu_wifi_primaryDNS : menu_item {
 struct express_wifi::menu_wifi_secondaryDNS : menu_item {
   menu_wifi_secondaryDNS() : menu_item({(char *)"Set secondary DNS address."}) {
     this->commands.push_back((char *)"dns2");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("secondary DNS: ").pln(express_wifi::getInstance().wifiData.secondary_DNS);
+      eMenu.v().p("secondary DNS: ").pln(eWifi.wifiData.secondary_DNS);
     } else {
       if (length >= 7 || length <= 15) {  // 0.0.0.0 to 000.000.000.000
         IPAddress ipv4;
         bool err = !ipv4.fromString(arg);
-        express_console_menu::getInstance().vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
+        eMenu.vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
         if (err) {
           return;
         }
-        express_wifi::getInstance().wifiData.secondary_DNS = ipv4;
-        express_wifi::getInstance().save_settings();
+        eWifi.wifiData.secondary_DNS = ipv4;
+        eWifi.save_settings();
 
-        console->v().p("New secondary DNS: ").pln(express_wifi::getInstance().wifiData.secondary_DNS);
+        eMenu.v().p("New secondary DNS: ").pln(eWifi.wifiData.secondary_DNS);
       } else {
-        console->v().pln("ERROR: invalid input!");
+        eMenu.v().pln("ERROR: invalid input!");
       }
     }
   }
@@ -411,25 +400,24 @@ struct express_wifi::menu_wifi_softap_local_ip : menu_item {
   menu_wifi_softap_local_ip() : menu_item({(char *)"Set SoftAP local IP address."}) {
     this->commands.push_back((char *)"sl");
     this->commands.push_back((char *)"slocal");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("SoftAP local IP: ").pln(express_wifi::getInstance().wifiData.softap_local_IP);
+      eMenu.v().p("SoftAP local IP: ").pln(eWifi.wifiData.softap_local_IP);
     } else {
       if (length >= 7 || length <= 15) {  // 0.0.0.0 to 000.000.000.000
         IPAddress ipv4;
         bool err = !ipv4.fromString(arg);
-        express_console_menu::getInstance().vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
+        eMenu.vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
         if (err) {
           return;
         }
-        express_wifi::getInstance().wifiData.softap_local_IP = ipv4;
-        express_wifi::getInstance().save_settings();
+        eWifi.wifiData.softap_local_IP = ipv4;
+        eWifi.save_settings();
 
-        console->v().p("New SoftAP local IP: ").pln(express_wifi::getInstance().wifiData.softap_local_IP);
+        eMenu.v().p("New SoftAP local IP: ").pln(eWifi.wifiData.softap_local_IP);
       } else {
-        console->v().pln("ERROR: invalid input!");
+        eMenu.v().pln("ERROR: invalid input!");
       }
     }
   }
@@ -439,25 +427,24 @@ struct express_wifi::menu_wifi_softap_gatway_ip : menu_item {
   menu_wifi_softap_gatway_ip() : menu_item({(char *)"Set SoftAP gateway IP address."}) {
     this->commands.push_back((char *)"sg");
     this->commands.push_back((char *)"sgateway");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     if (length == 0) {
-      console->v().p("SoftAP gateway IP: ").pln(express_wifi::getInstance().wifiData.softap_gateway_IP);
+      eMenu.v().p("SoftAP gateway IP: ").pln(eWifi.wifiData.softap_gateway_IP);
     } else {
       if (length >= 7 || length <= 15) {  // 0.0.0.0 to 000.000.000.000
         IPAddress ipv4;
         bool err = !ipv4.fromString(arg);
-        express_console_menu::getInstance().vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
+        eMenu.vvv().p("Importing IP address: ").p(arg).p(" ... ").pln(err ? "ERROR" : "DONE");
         if (err) {
           return;
         }
-        express_wifi::getInstance().wifiData.softap_gateway_IP = ipv4;
-        express_wifi::getInstance().save_settings();
+        eWifi.wifiData.softap_gateway_IP = ipv4;
+        eWifi.save_settings();
 
-        console->v().p("New SoftAP gateway IP: ").pln(express_wifi::getInstance().wifiData.softap_gateway_IP);
+        eMenu.v().p("New SoftAP gateway IP: ").pln(eWifi.wifiData.softap_gateway_IP);
       } else {
-        console->v().pln("ERROR: invalid input!");
+        eMenu.v().pln("ERROR: invalid input!");
       }
     }
   }
@@ -466,25 +453,24 @@ struct express_wifi::menu_wifi_softap_gatway_ip : menu_item {
 struct express_wifi::menu_sub_wifi : menu_item {
   menu_sub_wifi() : menu_item({(char *)"WiFi settings."}) {
     this->commands.push_back((char *)"wifi");
-    this->console = &express_console_menu::getInstance();
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    console->MENU_POINTER.clear();
-    console->newSubMenu();
-    console->MENU_POINTER.push_back(express_wifi::getInstance()._menu_wifi_info);
-    console->MENU_POINTER.push_back(express_wifi::getInstance()._menu_wifi_ssid);
-    console->MENU_POINTER.push_back(express_wifi::getInstance()._menu_wifi_password);
-    console->MENU_POINTER.push_back(express_wifi::getInstance()._menu_wifi_reconnect);
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_sta());
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_static());
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_local_ip());
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_gatway_ip());
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_subnetmask());
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_primaryDNS());
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_secondaryDNS());
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_softap_local_ip());
-    console->MENU_POINTER.push_back(new express_wifi::menu_wifi_softap_gatway_ip());
-    console->MENU_POINTER.push_back(express_wifi::getInstance()._menu_wifi_defaults);
+    eMenu.MENU_POINTER.clear();
+    eMenu.newSubMenu();
+    eMenu.MENU_POINTER.push_back(new menu_wifi_info());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_ssid());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_password());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_reconnect());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_sta());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_static());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_local_ip());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_gatway_ip());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_subnetmask());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_primaryDNS());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_secondaryDNS());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_softap_local_ip());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_softap_gatway_ip());
+    eMenu.MENU_POINTER.push_back(new menu_wifi_defaults());
   }
 };
 
@@ -493,15 +479,15 @@ struct express_wifi::menu_sub_wifi : menu_item {
 void express_wifi::wifi_event_disconnected() {
   if (connection_retries >= WIFI_CONNECTION_RETRIES) {
     connection_retries = 0;
-    express_wifi::getInstance().establish_connection();
+    eWifi.establish_connection();
   } else {
     connection_retries++;
-    express_console_menu::getInstance().vvv().p("Connections retrying in: ").pln((WIFI_CONNECTION_RETRIES - connection_retries) + 1);
+    eMenu.vvv().p("Connections retrying in: ").pln((WIFI_CONNECTION_RETRIES - connection_retries) + 1);
   }
 }
 
 void express_wifi::establish_connection() {
-  // express_console_menu::getInstance().vvv().pln().p("Connecting to SSID: ").p(wifiData.ssid).pln(" ... ");
+  // eMenu.vvv().pln().p("Connecting to SSID: ").p(wifiData.ssid).pln(" ... ");
   WiFi.disconnect(true);
   delay(100);
 
@@ -509,30 +495,30 @@ void express_wifi::establish_connection() {
   // esp_wifi_set_mac(WIFI_IF_STA, &mac[0]);
 
   // WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
-  // express_console_menu::getInstance().vvv().pln().p("Applying Hostname: ").p(wifiData.host_name).p(" ... ").pln(WiFi.setHostname(wifiData.host_name) ? "DONE" : "ERROR!");
+  // eMenu.vvv().pln().p("Applying Hostname: ").p(wifiData.host_name).p(" ... ").pln(WiFi.setHostname(wifiData.host_name) ? "DONE" : "ERROR!");
 
   // Station
   if (wifiData.is_station_mode) {
     WiFi.mode(WIFI_STA);
     if (wifiData.is_static_IP) {
-      express_console_menu::getInstance().vvv().p("Applying STA settings: ").p(wifiData.local_IP).p(" ... ").pln(WiFi.config(wifiData.local_IP, wifiData.gateway_IP, wifiData.subnet_mask, wifiData.primary_DNS, wifiData.secondary_DNS) ? "DONE" : "ERROR!");
+      eMenu.vvv().p("Applying STA settings: ").p(wifiData.local_IP).p(" ... ").pln(WiFi.config(wifiData.local_IP, wifiData.gateway_IP, wifiData.subnet_mask, wifiData.primary_DNS, wifiData.secondary_DNS) ? "DONE" : "ERROR!");
     }
-    express_console_menu::getInstance().vvv().p("Applying modem sleep: ").p(WIFI_MODEM_SLEEP ? "TRUE" : "FALSE").p(" ... ").pln(WiFi.setSleep(WIFI_MODEM_SLEEP) ? "DONE" : "ERROR!");
-    express_console_menu::getInstance().vvv().p("Applying TX power: ").p(WIFI_MODEM_TX_POWER).p(" ... ").pln(WiFi.setTxPower((wifi_power_t)WIFI_MODEM_TX_POWER) ? "DONE" : "ERROR!");
-    express_console_menu::getInstance().vvv().p("Applying long range mode: ").p(WIFI_LONGRANG_MODE ? "TRUE" : "FALSE").p(" ... ");
+    eMenu.vvv().p("Applying modem sleep: ").p(WIFI_MODEM_SLEEP ? "TRUE" : "FALSE").p(" ... ").pln(WiFi.setSleep(WIFI_MODEM_SLEEP) ? "DONE" : "ERROR!");
+    eMenu.vvv().p("Applying TX power: ").p(WIFI_MODEM_TX_POWER).p(" ... ").pln(WiFi.setTxPower((wifi_power_t)WIFI_MODEM_TX_POWER) ? "DONE" : "ERROR!");
+    eMenu.vvv().p("Applying long range mode: ").p(WIFI_LONGRANG_MODE ? "TRUE" : "FALSE").p(" ... ");
     WiFi.enableLongRange(WIFI_LONGRANG_MODE);
-    express_console_menu::getInstance().vvv().pln("DONE");
+    eMenu.vvv().pln("DONE");
     delay(100);
     WiFi.begin(wifiData.ssid, wifiData.pwd);
 
     // SoftAP
   } else {
     WiFi.mode(WIFI_AP);
-    express_console_menu::getInstance().vvv().p("Applying SoftAP settings: ").p(wifiData.local_IP).p(" ... ").pln(WiFi.softAPConfig(wifiData.softap_local_IP, wifiData.softap_gateway_IP, wifiData.softap_subnet_mask) ? "DONE" : "ERROR!");
-    express_console_menu::getInstance().vvv().p("Applying TX power: ").p(WIFI_MODEM_TX_POWER).p(" ... ").pln(WiFi.setTxPower((wifi_power_t)WIFI_MODEM_TX_POWER) ? "DONE" : "ERROR!");
-    express_console_menu::getInstance().vvv().p("Applying long range mode: ").p(WIFI_LONGRANG_MODE ? "TRUE" : "FALSE").p(" ... ");
+    eMenu.vvv().p("Applying SoftAP settings: ").p(wifiData.local_IP).p(" ... ").pln(WiFi.softAPConfig(wifiData.softap_local_IP, wifiData.softap_gateway_IP, wifiData.softap_subnet_mask) ? "DONE" : "ERROR!");
+    eMenu.vvv().p("Applying TX power: ").p(WIFI_MODEM_TX_POWER).p(" ... ").pln(WiFi.setTxPower((wifi_power_t)WIFI_MODEM_TX_POWER) ? "DONE" : "ERROR!");
+    eMenu.vvv().p("Applying long range mode: ").p(WIFI_LONGRANG_MODE ? "TRUE" : "FALSE").p(" ... ");
     WiFi.enableLongRange(WIFI_LONGRANG_MODE);
-    express_console_menu::getInstance().vvv().pln("DONE");
+    eMenu.vvv().pln("DONE");
     delay(100);
     WiFi.softAP(wifiData.softap_ssid, wifiData.softap_pwd);
   }
@@ -543,16 +529,10 @@ void express_wifi::init(WiFiClass *WiFi) {
   _WiFi = WiFi;
 
   #if (USE_MENU == true)
-  express_console_menu::getInstance().vvvv().p("wifi init ... ");
-  _menu_sub_wifi       = new menu_sub_wifi();
-  _menu_wifi_ssid      = new menu_wifi_ssid();
-  _menu_wifi_password  = new menu_wifi_password();
-  _menu_wifi_info      = new menu_wifi_info();
-  _menu_wifi_reconnect = new menu_wifi_reconnect();
-  _menu_wifi_defaults  = new menu_wifi_defaults();
+  eMenu.vvvv().p("wifi init ... ");
 
-  express_console_menu::getInstance().MENU_ITEMS.push_back(_menu_sub_wifi);
-  express_console_menu::getInstance().vvvv().pln("done");
+  eMenu.MENU_ITEMS.push_back(new menu_sub_wifi());
+  eMenu.vvvv().pln("done");
   #endif
 
   #if (USE_NVS == true)
@@ -560,44 +540,38 @@ void express_wifi::init(WiFiClass *WiFi) {
 
   wifiData_t import_data;
   unsigned int sizeOfwifiData = sizeof(import_data);
-  err                         = express_nvs::getInstance().get("wifi_data", &import_data, &sizeOfwifiData);
+  err                         = eNvs.get("wifi_data", &import_data, &sizeOfwifiData);
 
   if (err == ESP_OK) {
     wifiData = import_data;
   } else {
-    express_console_menu::getInstance().v().p("ERROR->menu_wifi_info: ").pln(err);
-    express_console_menu::getInstance().vv().pln("ERROR: restoring defaults for wifi settings");
+    eMenu.v().p("ERROR->menu_wifi_info: ").pln(err);
+    eMenu.vv().pln("ERROR: restoring defaults for wifi settings");
     default_settings();
   }
   #endif
 
-  _WiFi->onEvent(express_wifi::getInstance().wifi_event);
+  _WiFi->onEvent(eWifi.wifi_event);
 
   establish_connection();
 }
 
-void express_wifi::update() {}
-
-
-
-
-
 
 
 void express_wifi::default_settings() {
-  express_console_menu::getInstance().v().pln("INFO: Applying default WiFi settings ...").pln();
+  eMenu.v().pln("INFO: Applying default WiFi settings ...").pln();
   wifiData_t new_settings;
 
   // Host name
-  // uint8_t macAddress[6];
-  // WiFi.macAddress(macAddress);
-  // sprintf(new_settings.host_name, "%s-%x%x", DEFAULT_WIFI_HOST_NAME, macAddress[4], macAddress[5]);
-  // sprintf(new_settings.softap_ssid, "%s-%X%X", DEFAULT_WIFI_SOFTAP_SSID, macAddress[4], macAddress[5]);
+  uint8_t macAddress[6];
+  WiFi.macAddress(macAddress);
+  sprintf(new_settings.host_name, "%s-%x%x", DEFAULT_WIFI_HOST_NAME, macAddress[4], macAddress[5]);
+  sprintf(new_settings.softap_ssid, "%s-%X%X", DEFAULT_WIFI_SOFTAP_SSID, macAddress[4], macAddress[5]);
 
   wifiData            = new_settings;
   unsigned int length = sizeof(new_settings);
-  express_nvs::getInstance().set("wifi_data", &new_settings, length);
-  express_console_menu::getInstance().v().pln(" DONE ");
+  eNvs.set("wifi_data", &new_settings, length);
+  eMenu.v().pln(" DONE ");
 }
 
 
@@ -608,44 +582,46 @@ void express_wifi::default_settings() {
 ///////////////////////////////
 
 void express_wifi::print_settings() {
-  express_console_menu::getInstance().printBox(true);
-  express_console_menu::getInstance().v().pln("   SETTINGS:").pln();
+  eMenu.printBox(true);
+  //  eMenu.printBox(true);
+  eMenu.v().pln("   SETTINGS:").pln();
 
-  express_console_menu::getInstance().printInfo("ssid", wifiData.ssid);
-  express_console_menu::getInstance().printInfo("pwd", express_console_menu::getInstance().mask(wifiData.pwd, 2).c_str());
-  express_console_menu::getInstance().printInfo("host_name", wifiData.host_name);
+  eMenu.printInfo("ssid", wifiData.ssid);
+  eMenu.printInfo("pwd", eMenu.mask(wifiData.pwd, 2).c_str());
+  eMenu.printInfo("host_name", wifiData.host_name);
   // Static STA
-  express_console_menu::getInstance().v().pln().pln(" --Static STA");
+  eMenu.v().pln().pln(" --Static STA");
 
-  express_console_menu::getInstance().printInfo("local_IP", wifiData.local_IP.toString().c_str());
-  express_console_menu::getInstance().printInfo("gateway_IP", wifiData.gateway_IP.toString().c_str());
-  express_console_menu::getInstance().printInfo("subnet_mask", wifiData.subnet_mask.toString().c_str());
-  express_console_menu::getInstance().printInfo("primary_DNS", wifiData.primary_DNS.toString().c_str());
-  express_console_menu::getInstance().printInfo("secondary_DNS", wifiData.secondary_DNS.toString().c_str());
-  express_console_menu::getInstance().printInfo("is_static_IP", wifiData.is_static_IP ? "TRUE" : "FALSE");
-  express_console_menu::getInstance().printInfo("is_station_mode", wifiData.is_station_mode ? "TRUE" : "FALSE");
+  eMenu.printInfo("local_IP", wifiData.local_IP.toString().c_str());
+  eMenu.printInfo("gateway_IP", wifiData.gateway_IP.toString().c_str());
+  eMenu.printInfo("subnet_mask", wifiData.subnet_mask.toString().c_str());
+  eMenu.printInfo("primary_DNS", wifiData.primary_DNS.toString().c_str());
+  eMenu.printInfo("secondary_DNS", wifiData.secondary_DNS.toString().c_str());
+  eMenu.printInfo("is_static_IP", wifiData.is_static_IP ? "TRUE" : "FALSE");
+  eMenu.printInfo("is_station_mode", wifiData.is_station_mode ? "TRUE" : "FALSE");
 
   // Soft AP
-  express_console_menu::getInstance().v().pln().pln(" --Soft AP");
+  eMenu.v().pln().pln(" --Soft AP");
 
-  express_console_menu::getInstance().printInfo("softap_ssid", wifiData.softap_ssid);
-  express_console_menu::getInstance().printInfo("softap_pwd", express_console_menu::getInstance().mask(wifiData.softap_pwd, 2).c_str());
-  express_console_menu::getInstance().printInfo("softap_local_IP", wifiData.softap_local_IP.toString().c_str());
-  express_console_menu::getInstance().printInfo("softap_gateway_IP", wifiData.softap_gateway_IP.toString().c_str());
-  express_console_menu::getInstance().printInfo("softap_subnet_mask", wifiData.softap_subnet_mask.toString().c_str());
+  eMenu.printInfo("softap_ssid", wifiData.softap_ssid);
+  eMenu.printInfo("softap_pwd", eMenu.mask(wifiData.softap_pwd, 2).c_str());
+  eMenu.printInfo("softap_local_IP", wifiData.softap_local_IP.toString().c_str());
+  eMenu.printInfo("softap_gateway_IP", wifiData.softap_gateway_IP.toString().c_str());
+  eMenu.printInfo("softap_subnet_mask", wifiData.softap_subnet_mask.toString().c_str());
 
-  express_console_menu::getInstance().printBox(false);
+  // eMenu.printBox(false);
+  eMenu.printBox(false);
 }
 
 void express_wifi::save_settings() {
   esp_err_t err;
-  unsigned int length = sizeof(express_wifi::getInstance().wifiData);
-  err                 = express_nvs::getInstance().set("wifi_data", &express_wifi::getInstance().wifiData, length);
+  unsigned int length = sizeof(eWifi.wifiData);
+  err                 = eNvs.set("wifi_data", &eWifi.wifiData, length);
 
   if (err == ESP_OK) {
-    express_console_menu::getInstance().vvvv().pln("saved settings.");
+    eMenu.vvvv().pln("saved settings.");
   } else {
-    express_console_menu::getInstance().v().pln("ERROR: Failed to save settings!");
+    eMenu.v().pln("ERROR: Failed to save settings!");
   }
 }
 

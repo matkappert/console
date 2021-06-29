@@ -1,5 +1,4 @@
-#ifndef CONFIGURATION_H
-#define CONFIGURATION_H
+#pragma once
 //   #define CONFIGURATION_H_VERSION 010107
 
 /**
@@ -9,6 +8,9 @@
 
 #define DEFAULT_VERBOSITY_LEVEL 3
 
+#define USE_PLOT false
+#define DEFAULT_INTERVAL (uint16_t) 30
+
 /**
  *  Use non-volatile storage (NVS, flash) to save settings
  */
@@ -16,6 +18,7 @@
 #define USE_MENU     true
 #define MENU_PADDING (uint8_t)4
 #define MENU_OFFSET  (uint8_t)30
+#define DEFAULT_MENU_ECHO true
 
 /**
  *
@@ -73,7 +76,5 @@
 
   #define DEFAULT_WIFI_HOST_NAME  "express"
   // clang-format on
-
-#endif
 
 #endif
