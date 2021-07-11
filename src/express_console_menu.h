@@ -4,7 +4,7 @@
     @repo       github.com/matkappert/express
     @date       26/09/20
 */
-#define EXPRESS_CONSOLE_MENU_VER "2.3.0"
+#define EXPRESS_CONSOLE_MENU_VER "2.3.1"
 #pragma once
 
 #include <Arduino.h>
@@ -28,7 +28,6 @@ using std::vector;
 // #include "EEPROM.h"
 #include "express_console.h"
 #define __EXPRESS_CONSOLE_MENU_LEVEL_INDEX 0
-#include "./CRCx/CRCx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,6 +73,9 @@ typedef enum {
 
 #if (USE_WIFI == true)
   #include "express_wifi.h"
+#endif
+#if (USE_CULEX == true)
+  #include "express_culex.h"
 #endif
 #if (USE_PLOT == true)
   #include "express_plot.h"
@@ -194,7 +196,7 @@ class express_console_menu : public express_console {
   }
   // express_console_menu *_self;
 
-  struct info;
+  // struct info;
   struct verbose;
   struct reboot;
   struct reset;
@@ -203,6 +205,6 @@ class express_console_menu : public express_console {
   struct exit_sub;
 
   struct verbose;
-  struct info;
+  struct information;
 
 };

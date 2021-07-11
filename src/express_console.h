@@ -2,7 +2,7 @@
     @file       express_console.h
     @author     matkappert
     @repo       github.com/matkappert/express_console
-    @version    V2.0.0
+    @version    V2.1.0
     @date       26/09/20
     @format     C++=""-A14-xn-xc-xl-xk-xV-T4-C-N-xW-w-Y-p-xg-H-W0-xb-j-xf-xh-c-xp-xC200""
 */
@@ -135,6 +135,43 @@ class express_console {
   }
   inline express_console& pln(void) {
     return println();
+  }
+
+  template <typename Type>
+  express_console& error(Type tX) {
+     _message_level = (Level)1;
+    if (shouldBePrinted()) {
+      print("\nERROR: ");
+      print(tX);
+    }
+    return *this;
+  }
+  template <typename Type>
+  express_console& warn(Type tX) {
+     _message_level = (Level)2;
+    if (shouldBePrinted()) {
+      print("\n WARN: ");
+      print(tX);
+    }
+    return *this;
+  }
+  template <typename Type>
+  express_console& info(Type tX) {
+    _message_level = (Level)3;
+    if (shouldBePrinted()) {
+      print(" INFO: ");
+      print(tX);
+    }
+    return *this;
+  }
+  template <typename Type>
+  express_console& debug(Type tX) {
+    _message_level = (Level)4;
+    if (shouldBePrinted()) {
+      print("DEBUG: ");
+      print(tX);
+    }
+    return *this;
   }
 };
 
