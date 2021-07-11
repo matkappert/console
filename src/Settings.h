@@ -1,6 +1,7 @@
-#pragma once
+#ifndef __EXPRESS_SETTINGS_H
+#define __EXPRESS_SETTINGS_H
 //   #define CONFIGURATION_H_VERSION 010107
-
+#define PROJECT_NAME "EXPRESS"
 /**
  * Serial baudrate :[2400, 9600, 19200, 38400, 57600, 115200, 250000, 500000, 1000000]
  */
@@ -8,16 +9,16 @@
 
 #define DEFAULT_VERBOSITY_LEVEL 3
 
-#define USE_PLOT false
-#define DEFAULT_INTERVAL (uint16_t) 30
+#define USE_PLOT         false
+#define DEFAULT_INTERVAL (uint16_t)30
 
 /**
  *  Use non-volatile storage (NVS, flash) to save settings
  */
-#define USE_NVS      true
-#define USE_MENU     true
-#define MENU_PADDING (uint8_t)4
-#define MENU_OFFSET  (uint8_t)30
+#define USE_NVS           true
+#define USE_MENU          true
+#define MENU_PADDING      (uint8_t)4
+#define MENU_OFFSET       (uint8_t)30
 #define DEFAULT_MENU_ECHO true
 
 /**
@@ -34,21 +35,21 @@
    */
   #define DEFAULT_WIFI_MODE_STATION (boolean) false
 
-// 19.5dBm [78]
-// 19dBm [76]
-// 18.5dBm [74]
-// 17dBm [68]
-// 15dBm [60]
-// 13dBm [52]
-// 11dBm [44]
-// 8.5dBm [34]
-// 7dBm [28]
-// 5dBm [20]
-// 2dBm [8]
-// -1dBm [-4]
-  #define WIFI_MODEM_TX_POWER (int8_t) 78
-  #define WIFI_MODEM_SLEEP (boolean) false
-  #define WIFI_LONGRANG_MODE (boolean) false
+  // 19.5dBm [78]
+  // 19dBm [76]
+  // 18.5dBm [74]
+  // 17dBm [68]
+  // 15dBm [60]
+  // 13dBm [52]
+  // 11dBm [44]
+  // 8.5dBm [34]
+  // 7dBm [28]
+  // 5dBm [20]
+  // 2dBm [8]
+  // -1dBm [-4]
+  #define WIFI_MODEM_TX_POWER (int8_t)78
+  #define WIFI_MODEM_SLEEP    (boolean) false
+  #define WIFI_LONGRANG_MODE  (boolean) false
 
   #define WIFI_CONNECTION_RETRIES 8
 
@@ -77,4 +78,33 @@
   #define DEFAULT_WIFI_HOST_NAME  "express"
   // clang-format on
 
+  /**
+   *  CULEX
+   */
+  #define USE_CULEX true
+  // clang-format on
+  #define DEFAULT_CULEX_SEVER_IP_ADDRESS \
+    (IPAddress) {                        \
+      10, 0, 0, 10                       \
+    }
+  // clang-format off
+  #define DEFAULT_CULEX_SERVER_PORT        (uint16_t)1883
+  #define DEFAULT_CULEX_BUFFER_SIZE        (uint32_t)1028
+  #define DEFAULT_CULEX_NAMESPACE          "spBv1.0"
+  #define DEFAULT_CULEX_GROUP_ID           "group"
+  #define DEFAULT_CULEX_EDGE_NODE_ID       "node"
+  #define DEFAULT_CULEX_DEVICE_ID          "device"
+  #define DEFAULT_CULEX_USERNAME           "KAP-xBJC6xTzarS6vWhrDtmMmNsJAoa84w"
+  #define DEFAULT_CULEX_PASSWORD           NULL
+  #define DEFAULT_CULEX_KEEPALIVE          (uint16_t)5   // Seconds, not milliseconds!
+  #define DEFAULT_CULEX_SET_SOCKET_TIMEOUT (uint16_t)10  // Seconds, not milliseconds!
+
+  // WILL
+  #define CULEX_LWT_QOS           1
+  #define CULEX_LWT_RETAIN        true
+  #define CULEX_LWT_CLEAN_SESSION true
+
+  #define CULEX_CONNECTION_WAIT (uint16_t)250 // Millisecends
+
+#endif
 #endif
