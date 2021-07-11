@@ -114,7 +114,6 @@ struct express_wifi {
   void wifi_event_disconnected();
 
   void init(WiFiClass *WiFi);
-  void update();
 
   void default_settings();
   void print_settings();

@@ -14,8 +14,8 @@ express_console_menu eMenu;  // global-scoped variable
 /*
   MENU: INFO
   */
-struct express_console_menu::info : menu_item {
-  info() : menu_item({(char *)"Displays firmware info."}) {
+struct express_console_menu::information : menu_item {
+  information() : menu_item({(char *)"Displays firmware info."}) {
     this->commands.push_back((char *)"i");
     this->commands.push_back((char *)"info");
   }
@@ -35,7 +35,7 @@ struct express_console_menu::info : menu_item {
     eMenu.v().p("   ").p("WiFi").p(":\t\t").pln(eWifi.version);
 #endif
 #if (USE_PLOT == true)
-    eMenu.v().p("   ").p("WiFi").p(":\t\t").pln(ePlot.version);
+    eMenu.v().p("   ").p("Plot").p(":\t\t").pln(ePlot.version);
 #endif
 
 #if defined(ESP8266) || defined(ESP8285)
@@ -51,7 +51,7 @@ struct express_console_menu::info : menu_item {
     eMenu.v().p("   ").p("IDE mode").p(":\t\t").pln(ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN");
 #endif
 
-#if defined(ESP32)
+#if defined(ESP_PLATFORM)
 
   #ifdef ARDUINO_VARIANT
     Serial.print("\nESP32 Board:      ");
@@ -84,7 +84,7 @@ struct express_console_menu::info : menu_item {
     // eMenu.v().p("   ").p("ESP-IDF").p(":\t\t").pln(esp_get_idf_version());
     eMenu.v().p("   ").p("Temprature").p(":\t\t").p((temprature_sens_read() - 32) / 1.8).pln("c");
 #endif
-#if defined(ESP32) || defined(ESP8266) || defined(ESP8285) && (USE_NVS == true)
+#if defined(ESP_PLATFORM)  && (USE_NVS == true)
     extern int32_t reboot_counter;
     eMenu.v().pln().pln("   Reboot Counter:");
     eMenu.v().p("   ").p("Lifetime").p(":\t\t").pln(eMenu.reboot_counter);
@@ -123,7 +123,7 @@ struct express_console_menu::verbose : menu_item {
 /*
 MENU: REBOOT
 */
-#if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
+#if defined(ESP_PLATFORM)
 struct express_console_menu::reboot : menu_item {
   reboot() : menu_item({(char *)"Reboot system."}) {
     this->commands.push_back((char *)"reboot");
@@ -242,11 +242,11 @@ void express_console_menu::init(Print &printer) {
   v().pln();
 
   MENU_ITEMS.push_back(new MENU::help());
-  MENU_ITEMS.push_back(new info());
+  MENU_ITEMS.push_back(new information());
   MENU_ITEMS.push_back(new verbose());
   MENU_ITEMS.push_back(new reset());
   MENU_ITEMS.push_back(new factory_reset());
-#if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
+#if defined(ESP_PLATFORM)
   MENU_ITEMS.push_back(new reboot());
 #endif
   MENU_ITEMS.push_back(new halt());
