@@ -9,8 +9,6 @@
 
 express_plot ePlot;  // global-scoped variable
 
-
-
 struct express_plot::menu_time : menu_item {
   menu_time() : menu_item({(char *)"Plot time interval"}) {
     this->commands.push_back((char *)"t");
@@ -23,9 +21,9 @@ struct express_plot::menu_time : menu_item {
       eMenu.vvv().p("Time: ").p(ePlot.interval).pln("ms.");
     }
   }
-  int GETinterval() {
-    return ePlot.interval;
-  }
+  // int GETinterval() {
+  //   return ePlot.interval;
+  // }
 };
 
 struct express_plot::menu_interrupt : menu_item {
@@ -66,10 +64,9 @@ struct express_plot::plotter : menu_item {
   }
 };
 
-void express_plot::init(int interval) {
-  // _time           = new menu_time(interval);
-  _plotter        = new plotter();
-  // _menu_interrupt = new menu_interrupt();
+void express_plot::init(int _interval) {
+  interval = _interval;
+  _plotter = new plotter();
 
   eMenu.MENU_ITEMS.push_back(_plotter);
   callback_plot = nullptr;
@@ -93,9 +90,19 @@ void express_plot::_print() {
   }
   lastPlotted = millis();
   for (auto &item : plots) {
-    float value = *item->value.float_value * item->multiplier;
-    value       = item->offset > 0 ? value + item->offset : value + item->offset;
-    eMenu.plot().p(item->name).p(':').p(value).p("\t");
+    if (item->type == PLOT_INT || item->type == PLOT_LONG || item->type == PLOT_LONG_LONG) {
+      long long value = *item->value.int_value * item->multiplier;
+      value           = item->offset > 0 ? value + item->offset : value + item->offset;
+      eMenu.plot().p(item->name).p(':').p(value).p("\t");
+    } else if (item->type == PLOT_U_INT || item->type == PLOT_U_LONG || item->type == PLOT_U_LONG_LONG) {
+      unsigned long long value = *item->value.int_value * item->multiplier;
+      value                    = item->offset > 0 ? value + item->offset : value + item->offset;
+      eMenu.plot().p(item->name).p(':').p(value).p("\t");
+    } else if (item->type == PLOT_DOUBLE) {
+      double value = *item->value.int_value * item->multiplier;
+      value        = item->offset > 0 ? value + item->offset : value + item->offset;
+      eMenu.plot().p(item->name).p(':').p(value).p("\t");
+    }
   }
   eMenu.plot().pln();
 }

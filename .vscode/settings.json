@@ -1,5 +1,13 @@
 {
     "C_Cpp.autocompleteAddParentheses": true,
     "workbench.iconTheme": "vs-minimal",
-    "C_Cpp.autoAddFileAssociations": false
+    "C_Cpp.autoAddFileAssociations": false,
+    "cSpell.words": [
+        "arduinojson",
+        "cule",
+        "xv"
+    ],
+    "cSpell.ignoreWords": [
+        "cbuf"
+    ]
 }

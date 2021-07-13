@@ -82,20 +82,23 @@
    *  CULEX
    */
   #define USE_CULEX true
-  // clang-format on
-  #define DEFAULT_CULEX_SEVER_IP_ADDRESS \
-    (IPAddress) {                        \
-      10, 0, 0, 10                       \
-    }
   // clang-format off
+  #define DEFAULT_CULEX_SEVER_IP_ADDRESS  (IPAddress) { 10, 0, 0, 10 }
+  // clang-format on
   #define DEFAULT_CULEX_SERVER_PORT        (uint16_t)1883
-  #define DEFAULT_CULEX_BUFFER_SIZE        (uint32_t)1028
-  #define DEFAULT_CULEX_NAMESPACE          "spBv1.0"
-  #define DEFAULT_CULEX_GROUP_ID           "group"
-  #define DEFAULT_CULEX_EDGE_NODE_ID       "node"
-  #define DEFAULT_CULEX_DEVICE_ID          "device"
-  #define DEFAULT_CULEX_USERNAME           "KAP-xBJC6xTzarS6vWhrDtmMmNsJAoa84w"
-  #define DEFAULT_CULEX_PASSWORD           NULL
+  #define CULEX_PAYLOAD_SIZE        (uint32_t)1028
+  #define CULEX_TOPIC_SIZE         (uint16_t)160
+
+  /**
+   *  Topic names
+   *  [NAMESPACE]/[USER_TOKEN]/[DEVICE_ID]/#
+   *  CULEXv1.0/123456789/12345678/#
+   */
+  #define DEFAULT_CULEX_NAMESPACE          "CULEXv1.0"
+  #define DEFAULT_CULEX_USER_TOKEN         "USER_TOKEN"
+  #define DEFAULT_CULEX_DEVICE_ID          "DEVICE_ID"
+  #define DEFAULT_CULEX_USERNAME           "USERNAME"
+  #define DEFAULT_CULEX_PASSWORD           "PASSWORD"
   #define DEFAULT_CULEX_KEEPALIVE          (uint16_t)5   // Seconds, not milliseconds!
   #define DEFAULT_CULEX_SET_SOCKET_TIMEOUT (uint16_t)10  // Seconds, not milliseconds!
 
@@ -104,7 +107,7 @@
   #define CULEX_LWT_RETAIN        true
   #define CULEX_LWT_CLEAN_SESSION true
 
-  #define CULEX_CONNECTION_WAIT (uint16_t)250 // Millisecends
+  #define CULEX_CONNECTION_WAIT (uint16_t)250  // Millisecends
 
 #endif
 #endif

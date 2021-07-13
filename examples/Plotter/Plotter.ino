@@ -4,7 +4,7 @@
 // express_plot plot            = express_plot();
 
 float angle_counter    = 0;
-float square_counter   = 25;
+int square_counter   = 25;
 int triangular_counter = 50;
 
 float sina       = 0.00;

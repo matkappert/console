@@ -71,6 +71,7 @@ typedef enum {
   isTrue  = 1,
 } isTrue_t;
 
+
 #if (USE_WIFI == true)
   #include "express_wifi.h"
 #endif
@@ -80,7 +81,6 @@ typedef enum {
 #if (USE_PLOT == true)
   #include "express_plot.h"
 #endif
-
 #ifndef USE_NVS
   #define USE_NVS true
 #endif

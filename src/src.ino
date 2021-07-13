@@ -30,7 +30,6 @@
 
 // #include "esp_event_legacy.h"
 
-
 void setup() {
   Serial.begin(BAUDRATE);
   delay(100);
