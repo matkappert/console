@@ -126,6 +126,10 @@ struct CULEX_TRANSPORT {
     eCulex.CULEX_TRANSPORT_VECTORS.push_back(this);
   }
   virtual void callback(JsonObject objectValue, const char * type) {}
+  virtual void publish() {
+    Serial.println("publish");
+
+  }
 };
 
 #endif

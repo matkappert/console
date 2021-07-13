@@ -4,17 +4,12 @@
   #include <WiFi.h>
 #endif
 
-// struct trans_control_reboot_t : CULEX_TRANSPORT {
-//   trans_control_reboot_t() : CULEX_TRANSPORT({(char *)"Node Control/Reboot", (EXPRESS_TYPE_ENUM)Boolean}) {}
-//   void callback() override {
-//     eMenu.v().pln("trans_bdSeq->callback()");
-//   }
-// } trans_control_reboot;
 
-struct connect : menu_item {
-  connect() : menu_item({(char *)"Connect or Disconnect to Culex server"}) {
+struct menu_connect_t : menu_item {
+  menu_connect_t() : menu_item({(char *)"Connect or Disconnect to Culex server"}) {
     this->commands.push_back((char *)"c");
     this->commands.push_back((char *)"connect");
+    eMenu.MENU_ITEMS.push_back(this); // TODO do the globally in parent struct
   }
   void callback(const char *cmd, const char *arg, const uint8_t length) override {
     isTrue_t value = eMenu.argIsTrue(arg);
@@ -28,7 +23,41 @@ struct connect : menu_item {
       eCulex.disconnect();
     }
   }
-};
+}  menu_connect;
+
+// struct menu_speedTest_t;
+
+// replace speedTest
+#define SPEED_TEST_COUNT (uint8_t)10
+uint32_t speed_start[SPEED_TEST_COUNT];
+uint32_t speed_end[SPEED_TEST_COUNT];
+uint8_t speed_counter;
+
+struct trans_speedTest_t : CULEX_TRANSPORT {
+  trans_speedTest_t() : CULEX_TRANSPORT({(char *)"speedTest", (EXPRESS_TYPE_ENUM)Int32}) {}
+  void callback(JsonObject object, const char *type) override {
+    eCulex.typeToValue(&this->value, type, object, (EXPRESS_TYPE_ENUM)Int32);
+    eMenu.info(__func__).p("value:").pln(this->value.Int32);
+    speed_end[speed_counter] = millis();
+    // eMenu.info(__func__).p("time diff:").pln(menu_speedTest.start - menu_speedTest.end);
+  }
+} trans_speedTest;
+
+struct menu_speedTest_t : menu_item {
+  menu_speedTest_t() : menu_item({(char *)"run a Culex speed test"}) {
+    this->commands.push_back((char *)"speed");
+    this->commands.push_back((char *)"speedTest");
+    eMenu.MENU_ITEMS.push_back(this); // TODO do the globally in parent struct
+  }
+  void callback(const char *cmd, const char *arg, const uint8_t length) override {
+    speed_start[speed_counter] = millis();
+    // data to send;
+    trans_speedTest.publish();
+  }
+}  menu_speedTest;
+
+
+
 
 void setup() {
   Serial.begin(115200);
@@ -38,7 +67,7 @@ void setup() {
   eWifi.init(&WiFi);
   eCulex.init(&WiFi);
 
-  eMenu.MENU_ITEMS.push_back(new connect());
+  // eMenu.MENU_ITEMS.push_back(new menu_connect());
   eMenu.MENU_POINTER.assign(eMenu.MENU_ITEMS.begin(), eMenu.MENU_ITEMS.end());
 
   EXPRESS_TYPE_UNION value;
