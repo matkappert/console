@@ -9,6 +9,7 @@
   #define EXPRESS_CULEX_VER "1.0.0"
   /**
    * @ref https://pubsubclient.knolleary.net/api
+   * @ref https://arduinojson.org/v6/doc/
    */
   #include <Arduino.h>
 
@@ -34,7 +35,18 @@ extern express_culex eCulex;
   #include <PubSubClient.h>
   #include <WiFi.h>
 
-enum CULEX_TOPICS_ENUM { NBIRTH = 0, NDEATH, DBIRTH, DDEATH, NDATA, DDATA, NCMD, DCMD, STATE, DATA };
+enum CULEX_TOPICS_ENUM {
+  NBIRTH = 0,
+  NDEATH,
+  DBIRTH,
+  DDEATH,
+  NDATA,
+  DDATA,
+  NCMD,
+  DCMD,
+  STATE,
+  DATA,
+};
 static const char *CULEX_TOPICS_CHAR[] = {
     "NBIRTH",  // Birth certificate for MQTT EoN nodes.
     "NDEATH",  // Death certificate for MQTT EoN nodes.
@@ -58,6 +70,13 @@ static const char *MQTT_CONNECTION_ERRORS_CHAR[] = {
     "MQTT_CONNECT_UNAVAILABLE",      // [3] the server was unable to accept the connection
     "MQTT_CONNECT_BAD_CREDENTIALS",  // [4] the username/password were rejected
     "MQTT_CONNECT_UNAUTHORIZED",     // [5] the client was not authorized to connect
+};
+
+enum CULEX_PERMISSIONS_e {
+  NO_PERMISSION             = 0,  // No access permission
+  WRITE_PERMISSION          = 2,  // Write permission
+  READ_PERMISSION           = 4,  // Read permission
+  READ_AND_WRITE_PERMISSION = 6,  // Read and write permission: 4 (read) + 2 (write) = 6
 };
 
 struct CULEX_TRANSPORT;
@@ -97,13 +116,32 @@ struct express_culex {
   void DATA_EVENT(const char *topic, byte *payload, unsigned int length);
 
   void generateTopics();
-  // void generatePayload();
+  void generatePayload(CULEX_TRANSPORT *transport);
+
   void postTopics();
-  //   String valueToBuffer(char *buffer, EXPRESS_TYPE_ENUM type, EXPRESS_TYPE_UNION *value);
 
-  void typeToValue(EXPRESS_TYPE_UNION *value, const char *type, JsonObject objectValue, EXPRESS_TYPE_ENUM shouldBeType = Unknown, const char *key = "value");
+  #define TYPE_TO_VALUE(TYPE, ENUM)                                                                          \
+    boolean typeToValue(TYPE **value, const char *type, JsonObject objectValue, const char *key = "value") { \
+      if (strcmp(type, EXPRESS_TYPE_CHAR[ENUM]) == 0) {                                                      \
+        **value = objectValue[key].as<TYPE>();                                                               \
+        return false;                                                                                        \
+      } else {                                                                                               \
+        return true;                                                                                         \
+      }                                                                                                      \
+    }
+  TYPE_TO_VALUE(int8_t, Int8);
+  TYPE_TO_VALUE(int16_t, Int16);
+  TYPE_TO_VALUE(int32_t, Int32);
+  TYPE_TO_VALUE(uint8_t, UInt8);
+  TYPE_TO_VALUE(uint16_t, UInt16);
+  TYPE_TO_VALUE(uint32_t, UInt32);
+  TYPE_TO_VALUE(float, Float);
+  TYPE_TO_VALUE(double, Double);
+  TYPE_TO_VALUE(boolean, Boolean);
 
-};
+  char valueToBuffer_buffer[(20 * sizeof(char)) + 1];
+  String valueToBuffer(CULEX_TRANSPORT *transport);
+};  //! culex
 
 /**
  * Culex transport templet.
@@ -112,23 +150,32 @@ struct express_culex {
  * @param name the topic name.
  * @param type the topic name.
  */
+
 struct CULEX_TRANSPORT {
   const char *name;
   char topic[CULEX_TOPIC_SIZE];
   EXPRESS_TYPE_ENUM type;
-  EXPRESS_TYPE_UNION value;
-  boolean readOnly = false;
-  //   boolean POST = false;
+  // EXPRESS_TYPE_UNION value;
+  CULEX_PERMISSIONS_e server_permissions = READ_PERMISSION;
+  CULEX_PERMISSIONS_e user_permissions   = NO_PERMISSION;
+  int8_t *value_int8;
+  int16_t *value_int16;
+  int32_t *value_int32;
+  uint8_t *value_uint8;
+  uint16_t *value_uint16;
+  uint32_t *value_uint32;
+  float *value_float;
+  double *value_double;
+  boolean *value_boolean;
 
   CULEX_TRANSPORT(char *name, EXPRESS_TYPE_ENUM type) {
     this->name = name;
     this->type = type;
     eCulex.CULEX_TRANSPORT_VECTORS.push_back(this);
   }
-  virtual void callback(JsonObject objectValue, const char * type) {}
+  virtual void callback(JsonObject objectValue, const char *type) {}
   virtual void publish() {
-    Serial.println("publish");
-
+    eCulex.generatePayload(this);
   }
 };
 

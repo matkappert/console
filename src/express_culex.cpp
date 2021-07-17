@@ -15,21 +15,6 @@ express_culex eCulex;  // global-scoped variable
 //   eCulex.DATA_EVENT(topic, payload, length);
 // }
 
-void express_culex::typeToValue(EXPRESS_TYPE_UNION *value, const char *type, JsonObject objectValue, EXPRESS_TYPE_ENUM shouldBeType, const char *key) {
-  if (shouldBeType != Unknown) {
-    if (strcmp(type, EXPRESS_TYPE_CHAR[shouldBeType]) != 0) {
-      eMenu.debug(__func__).p("unexpected type:").pln(type);
-      return;
-    }
-  }
-
-  if (strcmp(type, EXPRESS_TYPE_CHAR[UInt8]) == 0) {
-    value->UInt8 = objectValue[key].as<uint8_t>();
-  } else {
-    eMenu.debug(__func__).p("unkown type:").pln(type);
-  }
-}
-
 void express_culex::DATA_EVENT(const char *topic, byte *payload, unsigned int length) {
   DeserializationError error = deserializeJson(doc, (const byte *)payload, length);
   if (error) {
@@ -54,15 +39,6 @@ void express_culex::DATA_EVENT(const char *topic, byte *payload, unsigned int le
   }
 }
 
-// replace TEST
-struct trans_TEST_t : CULEX_TRANSPORT {
-  trans_TEST_t() : CULEX_TRANSPORT({(char *)"TEST", (EXPRESS_TYPE_ENUM)UInt8}) {}
-  void callback(JsonObject object, const char *type) override {
-    eCulex.typeToValue(&this->value, type, object, (EXPRESS_TYPE_ENUM)UInt8);
-    eMenu.info(__func__).p("value:").pln(this->value.UInt8);
-  }
-} trans_TEST;
-
 struct trans_DATA_t : CULEX_TRANSPORT {
   trans_DATA_t() : CULEX_TRANSPORT({(char *)"DATA", (EXPRESS_TYPE_ENUM)Boolean}) {}
 } trans_DATA;
@@ -76,14 +52,15 @@ struct trans_bdSeq_t : CULEX_TRANSPORT {
 
 struct trans_system_coreVoltage_t : CULEX_TRANSPORT {
   trans_system_coreVoltage_t() : CULEX_TRANSPORT({(char *)"system/coreVoltage", (EXPRESS_TYPE_ENUM)Float}) {
-    this->readOnly = true;
+    this->server_permissions = READ_PERMISSION;
+    this->user_permissions   = READ_PERMISSION;
   }
 } trans_system_coreVoltage;
 
 void express_culex::init(WiFiClass *WiFi) {
   _WiFi = WiFi;
   generateTopics();
-  postTopics();
+  //   postTopics();
 }
 
 void express_culex::generateTopics() {
@@ -96,15 +73,25 @@ void express_culex::generateTopics() {
 
 void express_culex::postTopics() {
   for (auto &transport : CULEX_TRANSPORT_VECTORS) {
-    StaticJsonDocument<200> JSON;
-    JSON["name"]      = transport->name;
-    JSON["timestamp"] = millis();
-    JSON["dataType"]  = EXPRESS_TYPE_CHAR[transport->type];
-    JSON["value"]     = eUtil.valueToBuffer(transport->type, &transport->value);
-    String payload;
-    serializeJson(JSON, payload);
-    eMenu.debug(__func__).p("name: ").p(transport->name).p(", payload: ").pln(payload);
+    generatePayload(transport);
   }
+}
+
+void express_culex::generatePayload(CULEX_TRANSPORT *transport) {
+  char payload[256];
+  StaticJsonDocument<256> doc;
+  doc["name"] = transport->name;
+  // doc["timestamp"] = millis();
+  doc["dataType"] = EXPRESS_TYPE_CHAR[transport->type];
+  //   doc["value"]    = eUtil.valueToBuffer(transport->type, &transport->value);
+  doc["value"] = valueToBuffer(transport);
+
+  //* permissions = [USER, SERVER] 0x0F0F; uint16_t wd = ((uint16_t)d2 << 8) | d1
+  doc["permissions"] = ((uint16_t)(((uint8_t)transport->user_permissions << 8) | (uint8_t)transport->server_permissions));
+
+  size_t n = serializeJson(doc, payload);
+  culexClient.publish(transport->topic, payload, n);
+  eMenu.debug(__func__).p("name: ").p(transport->name).p("topic: \n").p(transport->topic).p("\npayload: \n").pln(payload);
 }
 
 void express_culex::update() {
@@ -122,7 +109,7 @@ void express_culex::update() {
     }
   } else if (isConnected && (culexClient.state() != 0 || !_WiFi->isConnected())) {  // if culex is NOT connected && wifi is NOT connected
     isConnected = false;
-   eMenu.error(__func__).p("connection terminated!").pln();
+    eMenu.error(__func__).p("connection terminated!").pln();
   }
 }
 
@@ -161,7 +148,7 @@ boolean express_culex::connect() {
       // culexClient.publish("outTopic", "hello world");
       // culexClient.subscribe("inTopic");
       // birth();
-      trans_bdSeq.value.UInt8++;
+      trans_bdSeq.value_uint8++;
       eMenu.debug(__func__).p("subscribing to: ").pln(trans_DATA.topic);
       culexClient.subscribe(trans_DATA.topic);
       return true;
@@ -193,3 +180,28 @@ boolean express_culex::connect() {
 //     eMenu.debug("Culex DATA topic:").p(topic).p(", length:").p(length).pln(", payload...");
 //     eMenu.debug(payload).pln();
 // }
+
+
+String express_culex::valueToBuffer(CULEX_TRANSPORT *transport) {
+  char buffer[(20 * sizeof(char)) + 1];
+  if (transport->type == Int8) {
+    itoa(*transport->value_int8, buffer, 10);
+  } else if (transport->type == Int16) {
+    itoa(*transport->value_int16, buffer, 10);
+  } else if (transport->type == Int32) {
+    itoa(*transport->value_int32, buffer, 10);
+  } else if (transport->type == UInt8) {
+    utoa(*transport->value_uint8, buffer, 10);
+  } else if (transport->type == UInt16) {
+    utoa(*transport->value_uint16, buffer, 10);
+  } else if (transport->type == UInt32) {
+    utoa(*transport->value_uint32, buffer, 10);
+  } else if (transport->type == Float) {
+    dtostrf(*transport->value_float, 6, 6, buffer);
+  } else if (transport->type == Double) {
+    dtostrf(*transport->value_double, 6, 6, buffer);
+  } else if (transport->type == Boolean) {
+    sprintf(buffer, "%s", *transport->value_boolean ? "TRUE" : "FALSE");
+  }
+  return String(buffer);
+}

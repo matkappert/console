@@ -35,34 +35,7 @@ static union EXPRESS_TYPE_UNION {
 } EXPRESS_TYPE_UNION_t;
 
 struct express_utilities {
-
-  String valueToBuffer(EXPRESS_TYPE_ENUM type, EXPRESS_TYPE_UNION *value) {
-    char buffer[(20*sizeof( char ))+1]; 
-    if (type == Int8) {
-      itoa(value->Int8, buffer, 10);
-    } else if (type == Int16) {
-      itoa(value->Int16, buffer, 10);
-    } else if (type == Int32) {
-      itoa(value->Int32, buffer, 10);
-    // } else if (type == Int64) {
-    //   itoa(value->Int64, buffer, 10);
-    } else if (type == UInt8) {
-      utoa(value->UInt8, buffer, 10);
-    } else if (type == UInt16) {
-      utoa(value->UInt16, buffer, 10);
-    } else if (type == UInt32) {
-      utoa(value->UInt32, buffer, 10);
-    // } else if (type == UInt64) {
-    //   utoa(value->UInt64, buffer, 10);
-    } else if (type == Float) {
-      dtostrf(value->Float, 6, 6, buffer);
-    } else if (type == Double) {
-      dtostrf(value->Double, 6, 6, buffer);
-    } else if (type == Boolean) {
-      sprintf(buffer, "%s", value->Boolean ? "TRUE" : "FALSE");
-    } 
-    return String(buffer);
-  }
+  
 };
 
 // express_utilities eUtil;
