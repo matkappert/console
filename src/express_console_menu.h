@@ -8,15 +8,14 @@
 #pragma once
 
 #include <Arduino.h>
+
 #include "settings.h"
 /*
  * Forward-Declarations
  */
 struct express_console_menu;
 extern express_console_menu eMenu;
-
-
-
+struct MENU_STRUCT;
 
 // #include <string>
 // #include <unordered_map>
@@ -29,26 +28,7 @@ using std::vector;
 #include "express_console.h"
 #define __EXPRESS_CONSOLE_MENU_LEVEL_INDEX 0
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-uint8_t temprature_sens_read();
-#ifdef __cplusplus
-}
-#endif
-
 class express_console_menu;
-
-struct menu_item {
-  vector<char *> commands;
-  char *help;  // e.g. 'Reboot ESP'
-  boolean hidden = false;
-
-  menu_item(char *help) {
-    this->help = help;
-  }
-  virtual void callback(const char *cmd, const char *arg, const uint8_t length) {}
-};
 
 #define CONSOLE_BUFFER_SIZE 100
 typedef void (*cmd_action_t)(const char *, const char *, uint8_t);
@@ -71,7 +51,6 @@ typedef enum {
   isTrue  = 1,
 } isTrue_t;
 
-
 #if (USE_WIFI == true)
   #include "express_wifi.h"
 #endif
@@ -85,7 +64,7 @@ typedef enum {
   #define USE_NVS true
 #endif
 #include "express_nvs.h"
-
+#include "express_utilities.h"
 class express_console_menu : public express_console {
 
  private:
@@ -95,9 +74,14 @@ class express_console_menu : public express_console {
  public:
   size_t _bufferLen;
   char _buffer[CONSOLE_BUFFER_SIZE];
-  Version version                       = {0, 0, 0};
-  vector<menu_item *> MENU_ITEMS;
-  vector<menu_item *> MENU_POINTER;
+  Version version = {0, 0, 0};
+  boolean hasFinishedInit = false;
+
+  vector<MENU_STRUCT *> MENU_BUFFER_VECTOR;  // current menu
+  vector<MENU_STRUCT *> MENU_MAIN_VECTOR;    // main menu
+  vector<MENU_STRUCT *> MENU_GLOBAL_VECTOR;  // system menu
+  vector<MENU_STRUCT *> MENU_SYSTEM_VECTOR;  // system sub menu
+
 #if (USE_NVS == true)
   uint32_t reboot_counter            = 0;
   uint32_t reboot_counter_resettable = 0;
@@ -108,11 +92,11 @@ class express_console_menu : public express_console {
 
   void default_verbosity_level() {
     // setLevel(3);
-    verbosity_level                                   = DEFAULT_VERBOSITY_LEVEL;
+    verbosity_level     = DEFAULT_VERBOSITY_LEVEL;
     eMenu._filter_level = (express_console::Level)verbosity_level;
     eNvs.set("verbosity_level", &verbosity_level);
   }
-
+  // TODO move to util
   void default_reboot_counter() {
     reboot_counter_resettable = 0;
     eNvs.set("reboot_cnt_rst", &reboot_counter_resettable);
@@ -120,37 +104,72 @@ class express_console_menu : public express_console {
 
   void update();
 
+  // TODO do i need this? i think not
   void setLevel(uint8_t level);
 
-  void printBox(bool isStart) {
-    v().p(isStart ? "\n┌" : "└");
-    for (uint8_t i = 0; i < 113; ++i) {
-      v().p("─");
-    }
-    v().pln(isStart ? "┐" : "┘");
+  // ┌───────────────────────────┬──────────────┐ TABLE_HEADER_START
+  // │    (index)                │  value       │ TABLE_DATA
+  // ├───────────────────────────┼──────────────┤ TABLE_HEADER_END
+  // │                           │              │ TABLE_ROW
+  // │    (index)                │  value       │ TABLE_DATA
+  // │    (index)                │  value       │ TABLE_DATA
+  // └───────────────────────────┴──────────────┘ TABLE_END
+
+  enum tableState {
+    TABLE_HEADER_START,
+    TABLE_HEADER_END,
+    TABLE_ROW,
+    TABLE_DATA,
+    TABLE_END,
   };
-
-  void printInfoKey(const char *key) {
-    for (uint8_t padding = 0; padding < MENU_PADDING; padding++) {
-      v().p(' ');
+  char tableBuffer[MENU_TABLE_WIDTH - (MENU_OFFSET + MENU_PADDING)];
+  void printTable(tableState state, const char *index = "", const char *value = "") {
+    if (state == TABLE_HEADER_START) {
+      v().p("\n\n┌");
+      for (uint8_t i = 1; i < MENU_TABLE_WIDTH; ++i) {
+        v().p(i == MENU_OFFSET - 2 ? "┬" : "─");
+      }
+      v().p("┐");
+    } else if (state == TABLE_DATA) {
+      v().p("│");
+      for (uint8_t padding = 0; padding < MENU_PADDING; padding++) {
+        v().p(" ");
+      }
+      v().p(index);
+      for (uint8_t tab = (MENU_PADDING + strlen(index)); tab < MENU_OFFSET; tab++) {
+        v().p(tab == MENU_OFFSET - 3 ? "│" : " ");
+      }
+      v().p(value);
+      for (uint8_t end = (MENU_OFFSET + MENU_PADDING + strlen(value)); end < MENU_TABLE_WIDTH + 3; end++) {
+        v().p(" ");
+      }
+      v().p("│");
+    } else if (state == TABLE_HEADER_END) {
+      v().p("├");
+      for (uint8_t i = 1; i < MENU_TABLE_WIDTH; ++i) {
+        v().p(i == MENU_OFFSET - 2 ? "┼" : "─");
+      }
+      v().p("┤");
+    } else if (state == TABLE_ROW) {
+      v().p("│");
+      for (uint8_t i = 1; i < MENU_TABLE_WIDTH; ++i) {
+        v().p(i == MENU_OFFSET - 2 ? "│" : " ");
+      }
+      v().p("│");
+    } else if (state == TABLE_END) {
+      v().p("└");
+      for (uint8_t i = 1; i < MENU_TABLE_WIDTH; ++i) {
+        v().p(i == MENU_OFFSET - 2 ? "┴" : "─");
+      }
+      v().p("┘");
     }
-    v().p(key).p(':');
-    for (uint8_t tab = (MENU_PADDING + strlen(key)); tab < MENU_OFFSET; tab++) {
-      v().p(' ');
-    }
+
+    v().pln("");
   }
 
-  void printInfo(const char *key, const char *value) {
-    printInfoKey(key);
-    v().pln(value);
-  }
+  
 
-  template <typename Type>
-  void printInfo(const char *key, Type value) {
-    printInfoKey(key);
-    v().pln(value);
-  }
-
+  // TODO move to util
   // masks a string with asterisks (good for displaying passwords)
   String mask(const char *c, int n) {
     String s = "";
@@ -173,10 +192,8 @@ class express_console_menu : public express_console {
   void processCommand(char *_ptr);
   void processFunction(const char *cmd, const char *arg, const uint8_t length);
 
-
  public:
-  void newSubMenu();
-  void newSubMenu(vector<menu_item *> sub);
+  void enterSubMenu(vector<MENU_STRUCT *> sub, boolean insertExitCallback = true);
 
   isTrue_t argIsTrue(const char *arg) {
     if (strlen(arg) <= 5) {
@@ -194,17 +211,26 @@ class express_console_menu : public express_console {
       return isError;
     }
   }
-  // express_console_menu *_self;
 
-  // struct info;
-  struct verbose;
-  struct reboot;
-  struct reset;
-  struct factory_reset;
-  struct halt;
-  struct exit_sub;
+  struct menu_information_t;
+  struct menu_verbose_t;
+  struct menu_reboot_t;
+  struct menu_reset_t;
+  struct menu_factoryReset_t;
+  // struct menu_halt_t;
+  struct menu_exitSubMenu_t;
+  struct menu_help_t;
+};
 
-  struct verbose;
-  struct information;
+struct MENU_STRUCT {
+  vector<char *> commands;
+  char *help;
+  boolean hidden;
 
+  MENU_STRUCT(char *help, boolean hidden = false) {
+    this->help   = help;
+    this->hidden = hidden;
+    // eMenu.MENU_STRUCT_VECTOR.push_back(this);
+  }
+  virtual void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) {}
 };

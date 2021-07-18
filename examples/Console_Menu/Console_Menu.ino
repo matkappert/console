@@ -1,67 +1,38 @@
-#include <express_console_menu.h>
-_version version = {0,1,0};
+#include <Arduino.h>
 
-void trigger(const char *arg);
-void channel(const char *arg);
+#include "Settings.h"
+#include "express_console_menu.h"
 
-uint8_t menu_length = 1;
+vector<MENU_STRUCT *> MENU;  // main menu
 
- cmd_t commands[9] = {
-  {"f", "function", trigger, "Trigger the test function"}
-};
+struct menu_MAIN_t : MENU_STRUCT {
+  menu_MAIN_t() : MENU_STRUCT({(char *)"MAIN MENU ITEM"}) {
+    this->commands.push_back((char *)"1");
+    this->commands.push_back((char *)"MAIN");
+    eMenu.MENU_MAIN_VECTOR.push_back(this);  // add to main menu vector
+  }
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+    eMenu.enterSubMenu(MENU);  // enter into our sub menu
+  }
+} menu_main;
 
-char* channels[][2] = { 
-  {"1", "ch:1"},
-  {"2", "ch:2"},
-  {"3", "ch:3"},
-  {"4", "ch:4"},
-  {"5", "ch:5"}
-};
-
-
-
+struct menu_SUB_t : MENU_STRUCT {
+  menu_SUB_t() : MENU_STRUCT({(char *)"SUB MENU ITEM"}) {
+    this->commands.push_back((char *)"2");
+    this->commands.push_back((char *)"SUB");
+    MENU.push_back(this);  // add to our sub menu vector
+  }
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {}
+} menu_sub;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(BAUDRATE);
   delay(100);
+  eMenu.init(Serial);
 
-  console.version = version;
-  console.setPrinter(Serial);
-  console.setFilter(Level::vvvv);
- 
- for(uint8_t i=0; i<3; i++){
-  append( channels[i][0], channels[i][1], channel, "Toggle output channel");
- }
-
-  console.begin(commands, menu_length);
+  eMenu.version = {1, 2, 3};
 }
 
 void loop() {
-  console.update();
-}
-
-void push(char *shortcut, char *command, cmd_action_t action, char *description){
-  for(uint8_t i=menu_length; i>0; i-- ){
-    console.p(i).p(" = ").pln(i-1);
-    commands[i] = commands[i-1];
-  }
-  menu_length++;
-  commands[0] = {shortcut, command, action, description};
-}
-
-void append(char *shortcut, char *command, cmd_action_t action, char *description){
-  commands[menu_length] = {shortcut, command, action, description};
-  menu_length++;
-}
-
-
-
-
-void trigger(const char *arg) {
-  console.v().p("void trigger(").p(arg).pln(")");
-}
-
-
-void channel(const char *arg) {
-   console.v().p("void channel(").p(arg).pln(")");
+  eMenu.update();
 }

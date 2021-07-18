@@ -1,11 +1,5 @@
-/*
-    @file       express_plot.h
-    @author     matkappert
-    @repo       github.com/matkappert/express
-    @date       05/06/21
-*/
-
-#include "express_plot.h"
+#if (USE_PLOT == true)
+  #include "express_plot.h"
 
 express_plot ePlot;  // global-scoped variable
 
@@ -131,3 +125,5 @@ void express_plot::_print() {
   }
   eMenu.plot().pln(payload);
 }
+
+#endif

@@ -3,11 +3,15 @@
     "workbench.iconTheme": "vs-minimal",
     "C_Cpp.autoAddFileAssociations": false,
     "cSpell.words": [
+        "DOUT",
+        "Efuse",
+        "QOUT",
         "arduinojson",
         "cosa",
         "cule",
         "plot",
         "sina",
+        "strlwr",
         "t",
         "xv"
     ],

@@ -11,155 +11,193 @@
 
 express_console_menu eMenu;  // global-scoped variable
 
+struct menu_system_t : MENU_STRUCT {
+  menu_system_t() : MENU_STRUCT({(char *)"system settings"}) {
+    this->commands.push_back((char *)"sys");
+    this->commands.push_back((char *)"system");
+    eMenu.MENU_MAIN_VECTOR.push_back(this);
+  }
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+    eMenu.enterSubMenu(eMenu.MENU_SYSTEM_VECTOR);
+  }
+} menu_system;
+
 /*
   MENU: INFO
   */
-struct express_console_menu::information : menu_item {
-  information() : menu_item({(char *)"Displays firmware info."}) {
+struct express_console_menu::menu_information_t : MENU_STRUCT {
+  menu_information_t() : MENU_STRUCT({(char *)"Displays firmware info."}) {
     this->commands.push_back((char *)"i");
     this->commands.push_back((char *)"info");
+    eMenu.MENU_SYSTEM_VECTOR.push_back(this);
   }
-  void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    eMenu.printBox(true);
-    eMenu.v().pln("   INFO:").pln();
-    eMenu.v().p("   ").p("FW version").p(":\t\t").p(eMenu.version.major).p(".").p(eMenu.version.minor).p(".").p(eMenu.version.patch).pln();
-    eMenu.v().p("   ").p("Build date").p(":\t\t").pln(__TIMESTAMP__);
-    eMenu.v().p("   ").p("GCC version").p(":\t\t").pln(__VERSION__);
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+    /**********************************
+     *  Firmware
+     **********************************/
+    eMenu.printTable(TABLE_HEADER_START);
+    eMenu.printTable(TABLE_DATA, "Firmware", "(value)");
+    eMenu.printTable(TABLE_HEADER_END);
+    eMenu.printTable(TABLE_ROW);
+    sprintf(eMenu.tableBuffer, "v%d.%d.%d", eMenu.version.major, eMenu.version.minor, eMenu.version.patch);
+    eMenu.printTable(TABLE_DATA, "Firmware Version", eMenu.tableBuffer);
+    eMenu.printTable(TABLE_DATA, "Build Date", __TIMESTAMP__);
+    eMenu.printTable(TABLE_DATA, "GCC Version", __VERSION__);
+    eMenu.printTable(TABLE_END);
 
-    eMenu.v().pln().pln("   Express Modules:");
-    eMenu.v().p("   ").p("Menu").p(":\t\t").pln(EXPRESS_CONSOLE_MENU_VER);
+    /**********************************
+     *  Modules
+     **********************************/
+    eMenu.printTable(TABLE_HEADER_START);
+    eMenu.printTable(TABLE_DATA, "Modules", "(version)");
+    eMenu.printTable(TABLE_HEADER_END);
+    eMenu.printTable(TABLE_ROW);
+    sprintf(eMenu.tableBuffer, "v%s", EXPRESS_CONSOLE_MENU_VER);
+    eMenu.printTable(TABLE_DATA, "Menu", eMenu.tableBuffer);
 #if (USE_NVS == true)
-    eMenu.v().p("   ").p("NVS").p(":\t\t\t").pln(eNvs.version);
+    sprintf(eMenu.tableBuffer, "v%s", eNvs.version);
+    eMenu.printTable(TABLE_DATA, "NVS", eMenu.tableBuffer);
 #endif
 #if (USE_WIFI == true)
-    eMenu.v().p("   ").p("WiFi").p(":\t\t").pln(eWifi.version);
+    sprintf(eMenu.tableBuffer, "v%s", eWifi.version);
+    eMenu.printTable(TABLE_DATA, "NVS", eMenu.tableBuffer);
+#endif
+#if (USE_CULEX == true)
+    sprintf(eMenu.tableBuffer, "v%s", eCulex.version);
+    eMenu.printTable(TABLE_DATA, "Culex", eMenu.tableBuffer);
 #endif
 #if (USE_PLOT == true)
-    eMenu.v().p("   ").p("Plot").p(":\t\t").pln(ePlot.version);
+    sprintf(eMenu.tableBuffer, "v%s", ePlot.version);
+    eMenu.printTable(TABLE_DATA, "NVS", eMenu.tableBuffer);
 #endif
+    eMenu.printTable(TABLE_END);
 
-#if defined(ESP8266) || defined(ESP8285)
-    eMenu.v().pln().pln("   ESP8266:");
-    uint32_t realSize   = ESP.getFlashChipRealSize();
-    uint32_t ideSize    = ESP.getFlashChipSize();
-    FlashMode_t ideMode = ESP.getFlashChipMode();
-    eMenu.v().p("   ").p("Flash ID").p(":\t\t").pln(ESP.getFlashChipId());
-    eMenu.v().p("   ").p("Flash size").p(":\t\t").pln(realSize);
-    eMenu.v().p("   ").p("Flash state").p(":\t\t").pln(ideSize != realSize ? "ERROR: Wrong configuration!" : "OKAY");
-    eMenu.v().p("   ").p("IDE size").p(":\t\t").pln(ideSize);
-    eMenu.v().p("   ").p("IDE speed").p(":\t\t").pln(ESP.getFlashChipSpeed());
-    eMenu.v().p("   ").p("IDE mode").p(":\t\t").pln(ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN");
-#endif
-
+    /**********************************
+     *  System
+     **********************************/
+    eMenu.printTable(TABLE_HEADER_START);
+    eMenu.printTable(TABLE_DATA, "System", "(value)");
+    eMenu.printTable(TABLE_HEADER_END);
+    eMenu.printTable(TABLE_ROW);
 #if defined(ESP_PLATFORM)
-
-  #ifdef ARDUINO_VARIANT
-    Serial.print("\nESP32 Board:      ");
-    Serial.print(ARDUINO_VARIANT);
-  #endif
-
-    eMenu.v().pln().pln("   ESP32:");
-    uint64_t chipid = ESP.getEfuseMac();  // The chip ID is essentially its MAC address(length: 6 bytes).
-    eMenu.v().p("   ").p("Chip ID").p(":\t\t").p((uint16_t)(chipid >> 32), HEX).pln((uint32_t)chipid, HEX);
-
-    eMenu.printInfo("Chip Model", ESP.getChipModel());
-    eMenu.printInfo("Chip Revision", ESP.getChipRevision());
-
-    eMenu.printInfo("Chip Cores", ESP.getChipCores());
-    eMenu.printInfo("Heap Size", ESP.getHeapSize());
-    eMenu.printInfo("Free Size", ESP.getFreeHeap());
-
-    eMenu.printInfo("Sketch Size", ESP.getSketchSize());
-    eMenu.printInfo("Sketch MD5", ESP.getSketchMD5());
-    eMenu.printInfo("SDK Version", ESP.getSdkVersion());
-    eMenu.printInfo("Free Sketch Space", ESP.getFreeSketchSpace());
-
-    eMenu.printInfo("Flash Chip Size", ESP.getFlashChipSize());
-    eMenu.printInfo("Flash Chip Speed", ESP.getFlashChipSpeed());
-    eMenu.printInfo("Flash Chip Mode", ESP.getFlashChipMode());
-    // eMenu.printInfo("magicFlashChipSize", ESP.magicFlashChipSize(ESP.getFlashChipSize()));
-    // eMenu.printInfo("magicFlashChipSpeed", ESP.magicFlashChipSpeed(ESP.getFlashChipSpeed()));
-    // eMenu.printInfo("magicFlashChipSpeed", ESP.magicFlashChipMode(ESP.getFlashChipMode()));
-
-    // eMenu.v().p("   ").p("ESP-IDF").p(":\t\t").pln(esp_get_idf_version());
-    eMenu.v().p("   ").p("Temprature").p(":\t\t").p((temprature_sens_read() - 32) / 1.8).pln("c");
+    sprintf(eMenu.tableBuffer, "%.2f °C", eUtil.getTemperature());
+    eMenu.printTable(TABLE_DATA, "Temperature", eMenu.tableBuffer);
+    sprintf(eMenu.tableBuffer, "%.2f v", eUtil.getVoltage());
+    eMenu.printTable(TABLE_DATA, "Core Voltage", eMenu.tableBuffer);
 #endif
-#if defined(ESP_PLATFORM)  && (USE_NVS == true)
-    extern int32_t reboot_counter;
-    eMenu.v().pln().pln("   Reboot Counter:");
-    eMenu.v().p("   ").p("Lifetime").p(":\t\t").pln(eMenu.reboot_counter);
-    eMenu.v().p("   ").p("Resettable").p(":\t\t").pln(eMenu.reboot_counter_resettable);
+#if defined(ESP_PLATFORM) && (USE_NVS == true)
+    utoa(eMenu.reboot_counter, eMenu.tableBuffer, 10);
+    eMenu.printTable(TABLE_DATA, "Total Reboots", eMenu.tableBuffer);
+    utoa(eMenu.reboot_counter_resettable, eMenu.tableBuffer, 10);
+    eMenu.printTable(TABLE_DATA, "Resettable Reboots", eMenu.tableBuffer);
 #endif
+    eMenu.printTable(TABLE_END);
 
-    eMenu.printBox(false);
+    /**********************************
+     *  ESP
+     **********************************/
+#if defined(ESP_PLATFORM)
+    eMenu.printTable(TABLE_HEADER_START);
+    eMenu.printTable(TABLE_DATA, "ESP Platform", "(value)");
+    eMenu.printTable(TABLE_HEADER_END);
+    eMenu.printTable(TABLE_ROW);
+    uint64_t chipid = ESP.getEfuseMac();
+    sprintf(eMenu.tableBuffer, "%3X%3X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
+    eMenu.printTable(TABLE_DATA, "Chip ID", eMenu.tableBuffer);
+    eMenu.printTable(TABLE_DATA, "Chip Model", ESP.getChipModel());
+    utoa(ESP.getChipRevision(), eMenu.tableBuffer, 10);
+    eMenu.printTable(TABLE_DATA, "Chip Revision", eMenu.tableBuffer);
+    utoa(ESP.getChipCores(), eMenu.tableBuffer, 10);
+    eMenu.printTable(TABLE_DATA, "Chip Cores", eMenu.tableBuffer);
+    eMenu.printTable(TABLE_ROW);
+    sprintf(eMenu.tableBuffer, "%.2f %%", 100.00 - (((float)ESP.getFreeHeap() / (float)ESP.getHeapSize()) * 100.00));
+    eMenu.printTable(TABLE_DATA, "Free Heap", eMenu.tableBuffer);
+    sprintf(eMenu.tableBuffer, "%d KiB", (uint32_t)ESP.getHeapSize() / 1024);
+    eMenu.printTable(TABLE_DATA, "Heap Size", eMenu.tableBuffer);
+    sprintf(eMenu.tableBuffer, "%d KiB", (uint32_t)ESP.getFreeHeap() / 1024);
+    eMenu.printTable(TABLE_DATA, "Free Size", eMenu.tableBuffer);
+    eMenu.printTable(TABLE_ROW);
+
+    eMenu.printTable(TABLE_DATA, "SDK Version", ESP.getSdkVersion());
+    sprintf(eMenu.tableBuffer, "%d MHz", (uint32_t)ESP.getFlashChipSpeed() / 1000000);
+    eMenu.printTable(TABLE_DATA, "Flash Chip Size", eMenu.tableBuffer);
+    FlashMode_t ideMode = ESP.getFlashChipMode();
+    eMenu.printTable(TABLE_DATA, "Flash Chip Mode", ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN");
+
+    eMenu.printTable(TABLE_END);
+#endif
   }
-};
+} menu_information;
 
 /*
     MENU: VERBOSE
     */
-struct express_console_menu::verbose : menu_item {
-  verbose() : menu_item({(char *)"Sets the message verbosity level."}) {
+struct express_console_menu::menu_verbose_t : MENU_STRUCT {
+  menu_verbose_t() : MENU_STRUCT({(char *)"Sets the message verbosity level."}) {
     this->commands.push_back((char *)"v");
     this->commands.push_back((char *)"verbose");
+    eMenu.MENU_GLOBAL_VECTOR.push_back(this);
   }
-  void callback(const char *cmd, const char *arg, const uint8_t length) override {
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
     if (length) {
       uint8_t level = strtol(arg, nullptr, 10);
       if (level >= 0 && level < 5) {
         eMenu.verbosity_level = level;
         eMenu._filter_level   = (express_console::Level)eMenu.verbosity_level;
         eNvs.set("verbosity_level", &eMenu.verbosity_level);
-        eMenu.vvv().p("verbose set: ").pln(eMenu.verbosity_level);
+        eMenu.info("verbose set: ").pln(eMenu.verbosity_level);
       } else {
-        eMenu.v().pln("ERROR: unkown level, pick a rang from 1-4");
+        eMenu.error("verbosity").pln("unkown level, pick a rang from 1-4");
       }
     } else {
-      eMenu.v().p("verbose: ").pln(eMenu.verbosity_level);
+      eMenu.v().p("verbosity: ").pln(eMenu.verbosity_level);
     }
   }
-};
+} menu_verbose;
 
 /*
 MENU: REBOOT
 */
 #if defined(ESP_PLATFORM)
-struct express_console_menu::reboot : menu_item {
-  reboot() : menu_item({(char *)"Reboot system."}) {
+struct express_console_menu::menu_reboot_t : MENU_STRUCT {
+  menu_reboot_t() : MENU_STRUCT({(char *)"Reboot system."}) {
     this->commands.push_back((char *)"reboot");
+    eMenu.MENU_GLOBAL_VECTOR.push_back(this);
   }
-  void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    eMenu.v().pln("INFO: Software Rebooting...").pln();
-    delay(1000);
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+    eMenu.info("menu_reboot").pln("Software Rebooting...").pln();
+    delay(500);
     ESP.restart();
   }
-};
+} menu_reboot;
 #endif
 
 /*
 MENU: RESET
 */
-struct express_console_menu::reset : menu_item {
-  reset() : menu_item({(char *)"reset system settings."}) {
+struct express_console_menu::menu_reset_t : MENU_STRUCT {
+  menu_reset_t() : MENU_STRUCT({(char *)"reset system settings."}) {
     this->commands.push_back((char *)"reset");
+    eMenu.MENU_SYSTEM_VECTOR.push_back(this);
   }
-  void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    eMenu.v().pln("INFO: Reset system settings...").pln();
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+    eMenu.info("menu_reset").pln("Reseting system settings...").pln();
     eMenu.default_verbosity_level();
     eMenu.default_reboot_counter();
   }
-};
+} menu_reset;
 
 /*
 MENU: FACTORY RESET
 */
-struct express_console_menu::factory_reset : menu_item {
-  factory_reset() : menu_item({(char *)""}) {
+struct express_console_menu::menu_factoryReset_t : MENU_STRUCT {
+  menu_factoryReset_t() : MENU_STRUCT({(char *)""}) {
     this->commands.push_back((char *)"factory-reset");
     this->hidden = true;
+    eMenu.MENU_SYSTEM_VECTOR.push_back(this);
   }
-  void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    eMenu.v().pln("INFO: factory resetting the system...").pln();
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+    eMenu.info("menu_factoryReset").pln("factory resetting the system...").pln();
 #if (USE_NVS == true)
     eNvs.erase_all();
   #if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
@@ -168,69 +206,95 @@ struct express_console_menu::factory_reset : menu_item {
   #endif
 #endif
   }
-};
+} menu_factoryReset;
 
-/*
-MENU: HALT
-*/
-struct express_console_menu::halt : menu_item {
-  halt() : menu_item({(char *)"Halt system for N ms"}) {
-    this->commands.push_back((char *)"delay");
-    this->commands.push_back((char *)"sleep");
-    this->commands.push_back((char *)"halt");
-    this->hidden = true;
-  }
-  void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    uint32_t value = strtol(arg, nullptr, 10);
-    eMenu.v().p("delay(").p(value).p(")...").pln();
-    delay(value);
-  }
-};
-
-/*
-MENU: EXIT
-*/
-struct express_console_menu::exit_sub : menu_item {
-  exit_sub() : menu_item({(char *)"return from sub menu"}) {
-    this->commands.push_back((char *)"exit");
-  }
-  void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    eMenu.MENU_POINTER.assign(eMenu.MENU_ITEMS.begin(), eMenu.MENU_ITEMS.end());
-  }
-};
+// /*
+// MENU: HALT
+// */
+// struct express_console_menu::menu_halt_t : MENU_STRUCT {
+//   menu_halt_t() : MENU_STRUCT({(char *)"Halt system for N ms"}) {
+//     this->commands.push_back((char *)"delay");
+//     this->commands.push_back((char *)"sleep");
+//     this->commands.push_back((char *)"halt");
+//     this->hidden = true;
+//   }
+//   void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+//     uint32_t value = strtol(arg, nullptr, 10);
+//     eMenu.v().p("delay(").p(value).p(")...").pln();
+//     delay(value);
+//   }
+// }menu_halt;
 
 /*
 MENU: HELP
 */
-namespace MENU {
-struct help : menu_item {
+// namespace MENU {
+struct express_console_menu::menu_help_t : MENU_STRUCT {
   express_console_menu *c;
-  help() : menu_item({(char *)"Displays a list of the available commands."}) {
+  menu_help_t() : MENU_STRUCT({(char *)"Displays a list of the available commands."}) {
     this->commands.push_back((char *)"?");
     this->commands.push_back((char *)"help");
+    // eMenu.MENU_GLOBAL_VECTOR.push_back(this);
   }
-  void callback(const char *cmd, const char *arg, const uint8_t length) override {
-    eMenu.printBox(true);
-    eMenu.v().pln("   OPTIONS:").pln();
-    for (auto &item : eMenu.MENU_POINTER) {
-      char cmds[30] = "";
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+    eMenu.printTable(TABLE_HEADER_START);
+    eMenu.printTable(TABLE_DATA, "Command", "Description");
+    eMenu.printTable(TABLE_HEADER_END);
+    eMenu.printTable(TABLE_ROW);
+    for (auto &item : eMenu.MENU_BUFFER_VECTOR) {
+      char cmds[30] = "\0";
       if (item->hidden == false) {
-        uint8_t cmd_counter = 0;
-        for (auto &command : item->commands) {
-          cmd_counter++;
-          strcat(cmds, command);
-          if (cmd_counter < item->commands.size()) {
-            strcat(cmds, ", ");
-          }
+        if (item->commands.size() >= 2) {
+          sprintf(cmds, "%s - %s", item->commands[0], item->commands[1]);
+        } else {
+          sprintf(cmds, "    %s", item->commands[0]);
         }
-        eMenu.printInfo(cmds, item->help);
-        // eMenu.v().p("\t\t").pln();
+        eMenu.printTable(TABLE_DATA, cmds, item->help);
       }
     }
-    eMenu.printBox(false);
+    eMenu.printTable(TABLE_ROW);
+    for (auto &item : eMenu.MENU_GLOBAL_VECTOR) {
+      char cmds[30] = "\0";
+      if (item->hidden == false) {
+        if (item->commands.size() >= 2) {
+          sprintf(cmds, "%s - %s", item->commands[0], item->commands[1]);
+        } else {
+          sprintf(cmds, "    %s", item->commands[0]);
+        }
+        eMenu.printTable(TABLE_DATA, cmds, item->help);
+      }
+    }
+    eMenu.printTable(TABLE_END);
   }
-};
-};  // namespace MENU
+} menu_help;
+// };  // namespace MENU
+
+/*
+MENU: EXIT
+*/
+struct express_console_menu::menu_exitSubMenu_t : MENU_STRUCT {
+  menu_exitSubMenu_t() : MENU_STRUCT({(char *)"return from sub menu"}) {
+    this->commands.push_back((char *)"*");
+    this->commands.push_back((char *)"exit");
+  }
+  void callback(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) override {
+    eMenu.enterSubMenu(eMenu.MENU_MAIN_VECTOR, false);
+  }
+};  // menu_exitSubMenu;
+
+void express_console_menu::enterSubMenu(vector<MENU_STRUCT *> vector_t, boolean insertExitCallback) {
+  MENU_BUFFER_VECTOR = vector_t;
+  // MENU_BUFFER_VECTOR.assign(vector_t.begin(), vector_t.end());
+
+  menu_help_t *help = new menu_help_t();
+  MENU_BUFFER_VECTOR.insert(MENU_BUFFER_VECTOR.begin(), help);
+  if (insertExitCallback) {
+    MENU_BUFFER_VECTOR.insert(MENU_BUFFER_VECTOR.begin(), new menu_exitSubMenu_t());
+  }
+  if (DEFAULT_SUB_MENU_HELP) {
+    help->callback(nullptr, nullptr, 0);
+  }
+}
 
 void express_console_menu::init(Print &printer) {
   _bufferLen = 0;
@@ -241,24 +305,15 @@ void express_console_menu::init(Print &printer) {
   v().pln();
   v().pln();
 
-  MENU_ITEMS.push_back(new MENU::help());
-  MENU_ITEMS.push_back(new information());
-  MENU_ITEMS.push_back(new verbose());
-  MENU_ITEMS.push_back(new reset());
-  MENU_ITEMS.push_back(new factory_reset());
-#if defined(ESP_PLATFORM)
-  MENU_ITEMS.push_back(new reboot());
-#endif
-  MENU_ITEMS.push_back(new halt());
-
   nvs_init();
-
-
+  // MENU_MAIN_VECTOR.insert(MENU_MAIN_VECTOR.begin(), new menu_help_t());
+  // eMenu.MENU_MAIN_VECTOR.push_back(new menu_help_t());
+  // eMenu.enterSubMenu(eMenu.MENU_MAIN_VECTOR, false);
 }
 
 void express_console_menu::nvs_init() {
 #if (USE_NVS == true)
-  vvvv().pln("express_console_menu::nvs_init() ...");
+  debug(" ... ").pln();
   eNvs.init();
   esp_err_t err;
 
@@ -266,10 +321,9 @@ void express_console_menu::nvs_init() {
   // verbosity_level
   err = eNvs.get("verbosity_level", &verbosity_level);
   if (err == ESP_OK) {
-    vvvv().p("_filter_level ").pln((uint8_t)eMenu._filter_level);
     eMenu._filter_level = (express_console::Level)verbosity_level;
   } else {
-    v().pln("ERROR: restoring defaults for verbosity_level");
+    error(__func__).pln("restoring defaults for verbosity_level");
     default_verbosity_level();
   }
 
@@ -282,25 +336,18 @@ void express_console_menu::nvs_init() {
   reboot_counter_resettable++;
   eNvs.set("reboot_cnt_rst", &reboot_counter_resettable);
 
-  vvvv().pln("express_console_menu::nvs_init() ... done");
+  debug("... done").pln();
 #else
   verbosity_level = DEFAULT_VERBOSITY_LEVEL;
   setLevel(DEFAULT_VERBOSITY_LEVEL);
 #endif
 }
 
-void express_console_menu::newSubMenu() {
-  MENU_POINTER.insert(MENU_POINTER.begin(), new MENU::help());
-  MENU_POINTER.insert(MENU_POINTER.begin(), new exit_sub());
-}
-
-void express_console_menu::newSubMenu(vector<menu_item *> sub) {
-  MENU_POINTER.assign(sub.begin(), sub.end());
-  MENU_POINTER.insert(MENU_POINTER.begin(), new MENU::help());
-  MENU_POINTER.insert(MENU_POINTER.begin(), new exit_sub());
-}
-
 void express_console_menu::update() {
+  if (!hasFinishedInit) {
+    eMenu.enterSubMenu(eMenu.MENU_MAIN_VECTOR, false);
+    hasFinishedInit = true;
+  }
   while (_stream->available()) {
     char in = _stream->read();
 
@@ -384,35 +431,35 @@ void express_console_menu::processCommand(char *_ptr) {
   }
 }
 
-void express_console_menu::processFunction(const char *cmd, const char *arg, const uint8_t length) {
-  vvvv().pln();
-  vvvv().p("cmd: ").pln(cmd);
-  vvvv().p("arg: ").pln(arg);
-  vvvv().p("length: ").pln(length);
+void express_console_menu::processFunction(const char *cmd = nullptr, const char *arg = nullptr, const uint8_t length = 0) {
+  debug(__func__).p("cmd: ").p(cmd).p(", length: ").p(length).p(", arg: ").pln(arg);
 
   boolean matched = false;
-  for (auto &item : MENU_POINTER) {
+  for (auto &item : MENU_BUFFER_VECTOR) {
     if (matched == true) {
       break;
     }
     for (auto &command : item->commands) {
       if (strcmp(command, cmd) == 0) {
-        vvvv().p("command: \"").p(command).pln("\" = true");
         matched = true;
-        // if ((void (*)())(item->*(&menu_item::callback_console)) != (void (*)())(&menu_item::callback_console)) {
-        //   item->callback_console(cmd, arg, length, eMenu);
-        // } else {
         item->callback(cmd, arg, length);
-        // }
         break;
-      } else {
-        vvvv().p("command: \"").p(command).pln("\" = false");
       }
     }
-    vvvv().pln();
+  }
+  for (auto &item : MENU_GLOBAL_VECTOR) {
+    if (matched == true) {
+      break;
+    }
+    for (auto &command : item->commands) {
+      if (strcmp(command, cmd) == 0) {
+        matched = true;
+        item->callback(cmd, arg, length);
+        break;
+      }
+    }
   }
   if (matched == false) {
-    v().p("\nERROR: invalid option: ").pln(cmd);
+    error(__func__).p("invalid option - ").pln(cmd);
   }
 }
-

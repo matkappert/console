@@ -9,24 +9,26 @@
 
 #define DEFAULT_VERBOSITY_LEVEL 3
 
-#define USE_PLOT         true
+#define USE_PLOT         false
 #define DEFAULT_INTERVAL (uint16_t)30
 
 /**
  *  Use non-volatile storage (NVS, flash) to save settings
  */
-#define USE_NVS           true
-#define USE_MENU          true
-#define MENU_PADDING      (uint8_t)4
-#define MENU_OFFSET       (uint8_t)30
-#define DEFAULT_MENU_ECHO true
+#define USE_NVS               true
+#define USE_MENU              true
+#define MENU_TABLE_WIDTH      (uint8_t)116
+#define MENU_PADDING          (uint8_t)4
+#define MENU_OFFSET           (uint8_t)30
+#define DEFAULT_MENU_ECHO     true
+#define DEFAULT_SUB_MENU_HELP (boolean) true
 
 /**
  *
  */
 #if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
 
-  #define USE_WIFI true
+  #define USE_WIFI false
 
   /**
    *  Use WiFi in station mode (connect to a network) [true]
@@ -81,13 +83,13 @@
   /**
    *  CULEX
    */
-  #define USE_CULEX true
+  #define USE_CULEX false
   // clang-format off
   #define DEFAULT_CULEX_SEVER_IP_ADDRESS  (IPAddress) { 10, 0, 0, 10 }
   // clang-format on
-  #define DEFAULT_CULEX_SERVER_PORT        (uint16_t)1883
+  #define DEFAULT_CULEX_SERVER_PORT (uint16_t)1883
   #define CULEX_PAYLOAD_SIZE        (uint32_t)1028
-  #define CULEX_TOPIC_SIZE         (uint16_t)160
+  #define CULEX_TOPIC_SIZE          (uint16_t)160
 
   /**
    *  Topic names
