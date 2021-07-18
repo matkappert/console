@@ -4,6 +4,21 @@
   #include <WiFi.h>
 #endif
 
+uint8_t dot = 0;
+
+struct trans_dot_t : CULEX_TRANSPORT {
+  trans_dot_t() : CULEX_TRANSPORT({(char *)"dot", (EXPRESS_TYPE_ENUM)UInt8}) {
+    this->server_permissions = READ_PERMISSION;
+    this->user_permissions   = READ_PERMISSION;
+    this->value_uint8        = &dot;
+    this->timer              = 1000;
+  }
+  boolean update() {
+    dot++;
+    return false;
+  }
+} trans_dot;
+
 struct menu_connect_t : menu_item {
   menu_connect_t() : menu_item({(char *)"Connect or Disconnect to Culex server"}) {
     this->commands.push_back((char *)"c");
@@ -154,6 +169,7 @@ void setup() {
 }
 
 void loop() {
+
   eCulex.update();
   eMenu.update();
 }

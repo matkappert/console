@@ -167,6 +167,8 @@ struct CULEX_TRANSPORT {
   float *value_float;
   double *value_double;
   boolean *value_boolean;
+  uint16_t timer;
+  uint32_t timer_last;
 
   CULEX_TRANSPORT(char *name, EXPRESS_TYPE_ENUM type) {
     this->name = name;
@@ -174,7 +176,8 @@ struct CULEX_TRANSPORT {
     eCulex.CULEX_TRANSPORT_VECTORS.push_back(this);
   }
   virtual void callback(JsonObject objectValue, const char *type) {}
-  virtual void publish() {
+  virtual boolean update() {}
+  void publish() {
     eCulex.generatePayload(this);
   }
 };

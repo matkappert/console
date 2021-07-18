@@ -34,8 +34,25 @@ static union EXPRESS_TYPE_UNION {
   boolean Boolean;
 } EXPRESS_TYPE_UNION_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+uint8_t temprature_sens_read();
+int rom_phy_get_vdd33();
+// float voltage = ((float)rom_phy_get_vdd33()) / 1000;
+#ifdef __cplusplus
+}
+#endif
+
 struct express_utilities {
+
+  float getVoltage() {
+    return ((float)rom_phy_get_vdd33()) / 1000;
+  }
   
+  float getTemperature(){
+    return (temprature_sens_read() - 32) / 1.8;
+  }
 };
 
 // express_utilities eUtil;

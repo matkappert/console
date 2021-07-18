@@ -51,9 +51,16 @@ struct trans_bdSeq_t : CULEX_TRANSPORT {
 } trans_bdSeq;
 
 struct trans_system_coreVoltage_t : CULEX_TRANSPORT {
+  float coreVoltage = 0.00;
   trans_system_coreVoltage_t() : CULEX_TRANSPORT({(char *)"system/coreVoltage", (EXPRESS_TYPE_ENUM)Float}) {
     this->server_permissions = READ_PERMISSION;
     this->user_permissions   = READ_PERMISSION;
+    this->value_float        = &coreVoltage;
+    this->timer              = 1000;
+  }
+  boolean update() {
+    coreVoltage = eUtil.getVoltage();
+    return true;
   }
 } trans_system_coreVoltage;
 
@@ -83,8 +90,7 @@ void express_culex::generatePayload(CULEX_TRANSPORT *transport) {
   doc["name"] = transport->name;
   // doc["timestamp"] = millis();
   doc["dataType"] = EXPRESS_TYPE_CHAR[transport->type];
-  //   doc["value"]    = eUtil.valueToBuffer(transport->type, &transport->value);
-  doc["value"] = valueToBuffer(transport);
+  doc["value"]    = valueToBuffer(transport);
 
   //* permissions = [USER, SERVER] 0x0F0F; uint16_t wd = ((uint16_t)d2 << 8) | d1
   doc["permissions"] = ((uint16_t)(((uint8_t)transport->user_permissions << 8) | (uint8_t)transport->server_permissions));
@@ -110,6 +116,18 @@ void express_culex::update() {
   } else if (isConnected && (culexClient.state() != 0 || !_WiFi->isConnected())) {  // if culex is NOT connected && wifi is NOT connected
     isConnected = false;
     eMenu.error(__func__).p("connection terminated!").pln();
+  } else {
+    for (auto &transport : CULEX_TRANSPORT_VECTORS) {
+      if (transport->timer > 0) {
+        if (millis() - transport->timer_last >= transport->timer) {
+          transport->timer_last = millis();
+          if (transport->update()) {
+            //* publish
+            eCulex.generatePayload(transport);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -180,7 +198,6 @@ boolean express_culex::connect() {
 //     eMenu.debug("Culex DATA topic:").p(topic).p(", length:").p(length).pln(", payload...");
 //     eMenu.debug(payload).pln();
 // }
-
 
 String express_culex::valueToBuffer(CULEX_TRANSPORT *transport) {
   char buffer[(20 * sizeof(char)) + 1];
