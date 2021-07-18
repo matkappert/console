@@ -9,7 +9,7 @@
 
 #define DEFAULT_VERBOSITY_LEVEL 3
 
-#define USE_PLOT         false
+#define USE_PLOT         true
 #define DEFAULT_INTERVAL (uint16_t)30
 
 /**

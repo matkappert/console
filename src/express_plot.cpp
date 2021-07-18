@@ -64,6 +64,16 @@ struct express_plot::plotter : menu_item {
   }
 };
 
+ADD_cpp(int8_t, Int8);
+ADD_cpp(int16_t, Int16);
+ADD_cpp(int32_t, Int32);
+ADD_cpp(uint8_t, UInt8);
+ADD_cpp(uint16_t, UInt16);
+ADD_cpp(uint32_t, UInt32);
+ADD_cpp(float, Float);
+ADD_cpp(double, Double);
+ADD_cpp(boolean, Boolean);
+
 void express_plot::init(int _interval) {
   interval = _interval;
   _plotter = new plotter();
@@ -84,25 +94,40 @@ void express_plot::interrupt() {
   _print();
 }
 
+String express_plot::valueToBuffer(PLOT_STRUCT *plot, float offset, float multiplier) {
+  char buffer[(20 * sizeof(char)) + 1];
+  if (plot->type == Int8) {
+    itoa((*plot->value.Int8 * multiplier) + offset, buffer, 10);
+  } else if (plot->type == Int16) {
+    itoa((*plot->value.Int16 * multiplier) + offset, buffer, 10);
+  } else if (plot->type == Int32) {
+    itoa((*plot->value.Int32 * multiplier) + offset, buffer, 10);
+  } else if (plot->type == UInt8) {
+    utoa((*plot->value.UInt8 * multiplier) + offset, buffer, 10);
+  } else if (plot->type == UInt16) {
+    utoa((*plot->value.UInt16 * multiplier) + offset, buffer, 10);
+  } else if (plot->type == UInt32) {
+    utoa((*plot->value.UInt32 * multiplier) + offset, buffer, 10);
+  } else if (plot->type == Float) {
+    dtostrf((*plot->value.Float * multiplier) + offset, -6, 3, buffer);
+  } else if (plot->type == Double) {
+    dtostrf((*plot->value.Double * multiplier) + offset, -6, 3, buffer);
+  } else if (plot->type == Boolean) {
+    sprintf(buffer, "%s", *plot->value.Boolean ? "TRUE" : "FALSE");
+  }
+  return String(buffer);
+}
+
 void express_plot::_print() {
   if (callback_plot) {
     callback_plot();
   }
   lastPlotted = millis();
-  for (auto &item : plots) {
-    if (item->type == PLOT_INT || item->type == PLOT_LONG || item->type == PLOT_LONG_LONG) {
-      long long value = *item->value.int_value * item->multiplier;
-      value           = item->offset > 0 ? value + item->offset : value + item->offset;
-      eMenu.plot().p(item->name).p(':').p(value).p("\t");
-    } else if (item->type == PLOT_U_INT || item->type == PLOT_U_LONG || item->type == PLOT_U_LONG_LONG) {
-      unsigned long long value = *item->value.int_value * item->multiplier;
-      value                    = item->offset > 0 ? value + item->offset : value + item->offset;
-      eMenu.plot().p(item->name).p(':').p(value).p("\t");
-    } else if (item->type == PLOT_DOUBLE) {
-      double value = *item->value.int_value * item->multiplier;
-      value        = item->offset > 0 ? value + item->offset : value + item->offset;
-      eMenu.plot().p(item->name).p(':').p(value).p("\t");
-    }
+  payload[0]  = '\0';
+  for (auto &plot : PLOT_STRUCT_VECTOR) {
+    char temp[50];
+    sprintf(temp, "%s:%s\t", plot->name, valueToBuffer(plot, plot->offset, plot->multiplier));
+    strcat(payload, temp);
   }
-  eMenu.plot().pln();
+  eMenu.plot().pln(payload);
 }

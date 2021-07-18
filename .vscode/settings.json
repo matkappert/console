@@ -4,10 +4,17 @@
     "C_Cpp.autoAddFileAssociations": false,
     "cSpell.words": [
         "arduinojson",
+        "cosa",
         "cule",
+        "plot",
+        "sina",
+        "t",
         "xv"
     ],
     "cSpell.ignoreWords": [
         "cbuf"
-    ]
+    ],
+    "doxdocgen.generic.authorName": "Mathew Kappert",
+    "doxdocgen.generic.dateFormat": "DD-MM-YYYY",
+    "doxdocgen.generic.authorTag": "@author {author}"
 }
