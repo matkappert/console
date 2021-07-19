@@ -60,7 +60,7 @@ struct express_console_menu::menu_information_t : MENU_STRUCT {
 #endif
 #if (USE_WIFI == true)
     sprintf(eMenu.tableBuffer, "v%s", eWifi.version);
-    eMenu.printTable(TABLE_DATA, "NVS", eMenu.tableBuffer);
+    eMenu.printTable(TABLE_DATA, "WiFi", eMenu.tableBuffer);
 #endif
 #if (USE_CULEX == true)
     sprintf(eMenu.tableBuffer, "v%s", eCulex.version);
@@ -68,7 +68,7 @@ struct express_console_menu::menu_information_t : MENU_STRUCT {
 #endif
 #if (USE_PLOT == true)
     sprintf(eMenu.tableBuffer, "v%s", ePlot.version);
-    eMenu.printTable(TABLE_DATA, "NVS", eMenu.tableBuffer);
+    eMenu.printTable(TABLE_DATA, "Plotter", eMenu.tableBuffer);
 #endif
     eMenu.printTable(TABLE_END);
 
@@ -83,7 +83,7 @@ struct express_console_menu::menu_information_t : MENU_STRUCT {
     sprintf(eMenu.tableBuffer, "%.2f °C", eUtil.getTemperature());
     eMenu.printTable(TABLE_DATA, "Temperature", eMenu.tableBuffer);
     sprintf(eMenu.tableBuffer, "%.2f v", eUtil.getVoltage());
-    eMenu.printTable(TABLE_DATA, "Core Voltage", eMenu.tableBuffer);
+    eMenu.printTable(TABLE_DATA, "Core Voltage", eMenu.tableBuffer); // TODO string  length  error
 #endif
 #if defined(ESP_PLATFORM) && (USE_NVS == true)
     utoa(eMenu.reboot_counter, eMenu.tableBuffer, 10);
@@ -111,7 +111,7 @@ struct express_console_menu::menu_information_t : MENU_STRUCT {
     eMenu.printTable(TABLE_DATA, "Chip Cores", eMenu.tableBuffer);
     eMenu.printTable(TABLE_ROW);
     sprintf(eMenu.tableBuffer, "%.2f %%", 100.00 - (((float)ESP.getFreeHeap() / (float)ESP.getHeapSize()) * 100.00));
-    eMenu.printTable(TABLE_DATA, "Free Heap", eMenu.tableBuffer);
+    eMenu.printTable(TABLE_DATA, "Used Heap", eMenu.tableBuffer);
     sprintf(eMenu.tableBuffer, "%d KiB", (uint32_t)ESP.getHeapSize() / 1024);
     eMenu.printTable(TABLE_DATA, "Heap Size", eMenu.tableBuffer);
     sprintf(eMenu.tableBuffer, "%d KiB", (uint32_t)ESP.getFreeHeap() / 1024);
@@ -306,9 +306,6 @@ void express_console_menu::init(Print &printer) {
   v().pln();
 
   nvs_init();
-  // MENU_MAIN_VECTOR.insert(MENU_MAIN_VECTOR.begin(), new menu_help_t());
-  // eMenu.MENU_MAIN_VECTOR.push_back(new menu_help_t());
-  // eMenu.enterSubMenu(eMenu.MENU_MAIN_VECTOR, false);
 }
 
 void express_console_menu::nvs_init() {

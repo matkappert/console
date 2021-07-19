@@ -1,18 +1,21 @@
+/**
+ * @file express_wifi.h
+ * @author Mathew Kappert
+ * @brief
+ * @version 0.1
+ * @date 14-11-2020
+ *
+ * @copyright Copyright (c) 2020
+ *
+ * @paragraph https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
+ * @paragraph https://randomnerdtutorials.com/solved-reconnect-esp32-to-wifi/
+ * @paragraph https://randomnerdtutorials.com/esp32-set-custom-hostname-arduino/
+ * @paragraph https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/#11
+ */
 #pragma once
-/*
-    @file       express_wifi.h
-    @author     matkappert
-    @repo       github.com/matkappert/express
-    @date       14/11/20
-*/
-#define EXPRESS_CONSOLE_WIFI_VER "2.3.0"
+#define EXPRESS_CONSOLE_WIFI_VER "0.1"
 
-// https://techtutorialsx.com/2021/01/04/esp32-soft-ap-and-station-modes/
-// https://randomnerdtutorials.com/solved-reconnect-esp32-to-wifi/
-// https://randomnerdtutorials.com/esp32-set-custom-hostname-arduino/
-// https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/#11
 #include <Arduino.h>
-
 #include "Settings.h"
 
 /*
@@ -25,17 +28,16 @@ extern express_wifi eWifi;
   #define USE_WIFI true
 #endif
 #if (USE_WIFI == true)
-
   #if (USE_MENU == true)
     #include "express_console_menu.h"
   #endif
-  // #include <unordered_map>
+
   #include <vector>
 using std::vector;
 
   #include <WiFi.h>
 
-  // #include "express_status_led.h"
+// #include "express_status_led.h"
 
   #if defined(ESP8266) || defined(ESP8285)
     #include <ESP8266WiFi.h>
@@ -46,33 +48,7 @@ using std::vector;
 const int MAX_SSID = 32;  // max number of characters in WiFi SSID
 const int MAX_PWD  = 64;  // max number of characters in WiFi Password
 
-// IPAddress local_IP( DEFAULT_WIFI_LOCAL_IP_ADDRESS[0],  DEFAULT_WIFI_LOCAL_IP_ADDRESS[1],  DEFAULT_WIFI_LOCAL_IP_ADDRESS[2],  DEFAULT_WIFI_LOCAL_IP_ADDRESS[3]);
-// IPAddress gateway(DEFAULT_WIFI_GATEWAY_IP_ADDRESS[0], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[1], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[2], DEFAULT_WIFI_GATEWAY_IP_ADDRESS[3]);
-
-// IPAddress subnet(255, 255, 0, 0);
-// IPAddress primaryDNS(8, 8, 8, 8);    // optional
-// IPAddress secondaryDNS(8, 8, 4, 4);  // optional
-
-// Singleton design for C++ 11
-// https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
 struct express_wifi {
-//  public:
-//   typedef void (*callback_t)(void);
-
-//   typedef void (*event)(system_event_id_t event, system_event_info_t info);
-//   // event EVENT_STA_CONNECTED;
-
-//   static express_wifi &getInstance() {
-//     static express_wifi instance;  // Guaranteed to be destroyed.
-//     return instance;               // Instantiated on first use.
-//   }
-
-//  private:
-//   express_wifi() {}  // Constructor? (the {} brackets) are needed here.
-//  public:
-//   express_wifi(express_wifi const &) = delete;
-//   void operator=(express_wifi const &) = delete;
-
  private:
   typedef uint32_t nvs_handle_t;
 
@@ -105,44 +81,40 @@ struct express_wifi {
   WiFiClass *_WiFi;
   const String version = EXPRESS_CONSOLE_WIFI_VER;
 
-  vector<menu_item *> WIFI_MENU;
+  vector<MENU_STRUCT *> MENU_WIFI_VECTOR;
 
   char **ssidList = NULL;
   int numSSID;
 
-  static void wifi_event(WiFiEvent_t event, WiFiEventInfo_t info);
-  void wifi_event_disconnected();
-
   void init(WiFiClass *WiFi);
 
-  void default_settings();
-  void print_settings();
+  #if (USE_NVS == true)
+  void loadWiFiSettings();
+  void saveWiFiSettings();
+  #endif
+  void restoreWiFiSettings();
 
-  void establish_connection();
+  void establishWiFiConnection();
+  void scanForWiFiNetworks();
+  static void WiFiEvent_static(WiFiEvent_t event, WiFiEventInfo_t info);
+  void WiFiHasDisconnected();
 
-  void save_settings();
-
-  // scan for WiFi networks and save only those with unique SSIDs
-  void scan();
-
-  struct menu_wifi_ssid;
-  struct menu_wifi_password;
-  struct menu_wifi_info;
-  struct menu_wifi_reconnect;
-  struct menu_wifi_defaults;
-  struct menu_wifi_sta;
-  struct menu_wifi_static;
-  struct menu_wifi_local_ip;
-  struct menu_wifi_gatway_ip;
-  struct menu_wifi_subnetmask;
-  struct menu_wifi_primaryDNS;
-  struct menu_wifi_secondaryDNS;
-  struct menu_wifi_softap_local_ip;
-  struct menu_wifi_softap_gatway_ip;
-  struct menu_sub_wifi;
-
-
-
+  struct menu_wifi_ssid_t;
+  struct menu_wifi_password_t;
+  struct menu_wifi_information_t;
+  struct menu_wifi_exportSettings_t;
+  struct menu_wifi_reconnect_t;
+  struct menu_wifi_defaults_t;
+  struct menu_wifi_sta_t;
+  struct menu_wifi_static_t;
+  struct menu_wifi_localIP_t;
+  struct menu_wifi_gatewayIP_t;
+  struct menu_wifi_subnetMask_t;
+  struct menu_wifi_primaryDNS_t;
+  struct menu_wifi_secondaryDNS_t;
+  struct menu_wifi_softAP_localIP_t;
+  struct menu_wifi_softAP_gatwayIP_t;
+  struct menu_wifi_enterSubMenu_t;
 
   const char *system_event_id_cstr[21] = {
       "WIFI_READY",             /**< ESP32 WiFi ready */
@@ -169,14 +141,14 @@ struct express_wifi {
   };
 
   const char *wl_status_cstr[8] = {
-      "WL_IDLE_STATUS", // = 0
+      "WL_IDLE_STATUS",  // = 0
       "WL_NO_SSID_AVAI",
       "WL_SCAN_COMPLETED",
       "WL_CONNECTED",
       "WL_CONNECT_FAILED",
       "WL_CONNECTION_LOST",
       "WL_DISCONNECTED",
-      "WL_NO_SHIELD", // = 255
+      "WL_NO_SHIELD",  // = 255
   };
 };
 #endif

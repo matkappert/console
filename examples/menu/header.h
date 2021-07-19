@@ -1,2 +1,0 @@
-
-#define yescunt 1

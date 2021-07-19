@@ -143,7 +143,7 @@ class express_console {
     if (shouldBePrinted()) {
       print("\nERROR: ");
       print(tX);
-      print("() ");
+      print(" ");
     }
     return *this;
   }
@@ -153,7 +153,7 @@ class express_console {
     if (shouldBePrinted()) {
       print("\n WARN: ");
       print(tX);
-      print("() ");
+      print(" ");
     }
     return *this;
   }
@@ -163,7 +163,7 @@ class express_console {
     if (shouldBePrinted()) {
       print(" INFO: ");
       print(tX);
-      print("() ");
+      print(" ");
     }
     return *this;
   }
@@ -173,7 +173,7 @@ class express_console {
     if (shouldBePrinted()) {
       print("DEBUG: ");
       print(tX);
-      print("() ");
+      print(" ");
     }
     return *this;
   }
