@@ -70,6 +70,11 @@ struct express_console_menu::menu_information_t : MENU_STRUCT {
     sprintf(eMenu.tableBuffer, "v%s", ePlot.version);
     eMenu.printTable(TABLE_DATA, "Plotter", eMenu.tableBuffer);
 #endif
+#if (USE_LED == true)
+    sprintf(eMenu.tableBuffer, "v%s", eLED.version);
+    eMenu.printTable(TABLE_DATA, "LED", EXPRESS_LED_STATUS_VER);
+#endif
+
     eMenu.printTable(TABLE_END);
 
     /**********************************

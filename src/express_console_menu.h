@@ -1,10 +1,14 @@
-/*
-    @file       express_console_menu.h
-    @author     matkappert
-    @repo       github.com/matkappert/express
-    @date       26/09/20
-*/
-#define EXPRESS_CONSOLE_MENU_VER "2.3.1"
+/**
+ * @file express_console_menu.h
+ * @author Mathew Kappert
+ * @brief 
+ * @version 0.1
+ * @date 26-09-2020
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
+#define EXPRESS_CONSOLE_MENU_VER "0.1"
 #pragma once
 
 #include <Arduino.h>
@@ -62,6 +66,9 @@ typedef enum {
 #endif
 #ifndef USE_NVS
   #define USE_NVS true
+#endif
+#if (USE_LED == true)
+#include "express_status_led.h"
 #endif
 #include "express_nvs.h"
 #include "express_utilities.h"

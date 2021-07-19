@@ -1,108 +1,109 @@
-#include "express_status_led.h"
-express_status_led status = express_status_led();
+#include <Arduino.h>
+#define USE_MENU  false
+#define USE_NVS   false
+#define USE_WIFI  false
+#define USE_CULEX false
+#define USE_LED   true
 
-void statusCallback() {
-	status.callback();
-};
-
+#include "Settings.h"
+#if (USE_MENU == true)
+  #include "express_console_menu.h"
+#else
+  #include "express_console.h"
+#endif
+#if (USE_WIFI == true)
+  #include "express_wifi.h"
+#endif
+#if (USE_CULEX == true)
+  #include "express_culex.h"
+#endif
+#if (USE_PLOT == true)
+  #include "express_plot.h"
+#endif
+#if (USE_LED == true)
+  #include "express_status_led.h"
+#endif
 
 void setup() {
 
+  eLED.init();
 
-	/************************************************************
-	    @brief Create an status_led instance
+  /************************************************************
+      @brief Blink the output pin at a 50/50 ratio
 
-	    @param led_pin, Microcontroller GPIO pin (LED)
-	    @param led_inverted, Invert the output pin
-	    @param callback, used for the timmer trigger
-	*************************************************************/
-	#if defined(ESP32)
-	status.init( 2, false, statusCallback);
-	#else
-	status.init( LED_BUILTIN, false, statusCallback);
-	#endif
+      @param value, Speed value in Hz [rang = 1-16]
+      @param detach_timer [default = true]
+  *************************************************************/
+  eLED.blink(1);
+  delay(5000);
+  eLED.blink(4);
+  delay(5000);
+  eLED.blink(8);
+  delay(5000);
+  eLED.blink(16);
+  delay(5000);
 
+  /************************************************************
+      @brief Blink an error code, pause & repeat
 
-	/************************************************************
-	    @brief Blink the output pin at a 50/50 ratio
+      @param value, Error code, (n) time to blink [rang = 1-10]
+      @param detach_timer [default = true]
+  *************************************************************/
+  eLED.error(1);
+  delay(5000);
+  eLED.error(2);
+  delay(5000);
+  eLED.error(4);
+  delay(5000);
+  eLED.error(8);
+  delay(5000);
 
-	    @param value, Speed value in Hz [rang = 1-16]
-	    @param detach_timer [default = true]
-	*************************************************************/
-	status.blink(1);
-	delay(5000);
-	status.blink(4);
-	delay(5000);
-	status.blink(8);
-	delay(5000);
-	status.blink(16);
-	delay(5000);
+  /************************************************************
+      @brief Add an LED effect to a task que, 0 = highest priority
 
+      @param priority, Que number [rang = 0-3]
+      @param effect, Use flash effect from TASK:: [OFF, BLINK, ERROR]
+      @param value, effect value settings
+  *************************************************************/
+  eLED.addTask(0, TASK::BLINK, 1);
+  eLED.addTask(1, TASK::BLINK, 4);
+  eLED.addTask(2, TASK::BLINK, 8);
+  eLED.addTask(3, TASK::BLINK, 16);
 
-	/************************************************************
-	    @brief Blink an error code, pause & repeat
+  /************************************************************
+      @brief Remove the task and apply the next task
 
-	    @param value, Error code, (n) time to blink [rang = 1-10]
-	    @param detach_timer [default = true]
-	*************************************************************/
-	status.error(1);
-	delay(5000);
-	status.error(2);
-	delay(5000);
-	status.error(4);
-	delay(5000);
-	status.error(8);
-	delay(5000);
+      @param priority, Que number [rang = 0-3]
+  *************************************************************/
+  delay(5000);
+  eLED.removeTask(0);
 
+  delay(5000);
+  eLED.removeTask(1);
 
-	/************************************************************
-	    @brief Add an LED effect to a task que, 0 = highest priority
+  delay(5000);
+  eLED.removeTask(2);
 
-	    @param priority, Que number [rang = 0-3]
-	    @param effect, Use flash effect from TASK:: [OFF, BLINK, ERROR]
-	    @param value, effect value settings
-	*************************************************************/
-	status.addTask( 0, TASK::BLINK, 1 );
-	status.addTask( 1, TASK::BLINK, 4 );
-	status.addTask( 2, TASK::BLINK, 8 );
-	status.addTask( 3, TASK::BLINK, 16 );
+  delay(5000);
+  eLED.removeTask(3);
 
+  /************************************************************
+      @brief Remove all the tasks and turn off
 
-	/************************************************************
-	    @brief Remove the task and apply the next task 
-
-	    @param priority, Que number [rang = 0-3]
-	*************************************************************/
-	delay(5000);
-	status.removeTask( 0 );
-
-	delay(5000);
-	status.removeTask( 1 );
-
-	delay(5000);
-	status.removeTask( 2 );
-
-	delay(5000);
-	status.removeTask( 3 );
-
-
-	/************************************************************
-	    @brief Remove all the tasks and turn off
-
-	*************************************************************/
-	status.removeAllTasks();
+  *************************************************************/
+  eLED.removeAllTasks();
 }
 
 void loop() {
-	bool x = status.state;
-	status.on();
-	delay(1000);
+  bool x = eLED.state;
+  eLED.on();
+  delay(1000);
 
-	status.off();
-	delay(1000);
+  eLED.off();
+  delay(1000);
 
-	status.flip();
-	delay(1000);
-	status.flip();
-	delay(1000);
+  eLED.flip();
+  delay(1000);
+  eLED.flip();
+  delay(1000);
 }

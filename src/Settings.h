@@ -9,7 +9,7 @@
 
 #define DEFAULT_VERBOSITY_LEVEL 3
 
-#define USE_PLOT         false
+#define cPLOT            false
 #define DEFAULT_INTERVAL (uint16_t)30
 
 /**
@@ -23,12 +23,28 @@
 #define DEFAULT_MENU_ECHO     true
 #define DEFAULT_SUB_MENU_HELP (boolean) true
 
+//* Status LED
+#define USE_LED true
+#define ESP32_TTGO_T8_V171
+
+#if defined(ESP32_TTGO_T8_V171)
+  #define LED_BUILTIN     21
+  #define LED_IS_INVERTED (boolean) false
+#elif defined(ESP32)
+  #define LED_BUILTIN     2
+  #define LED_IS_INVERTED (boolean) false
+#else
+  #define LED_IS_INVERTED (boolean) true
+#endif
+
 /**
  *
  */
 #if defined(ESP8266) || defined(ESP8285) || defined(ESP32)
 
-  #define USE_WIFI false
+  #ifndef USE_WIFI
+    #define USE_WIFI true
+  #endif
 
   /**
    *  Use WiFi in station mode (connect to a network) [true]
