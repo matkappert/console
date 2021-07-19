@@ -59,6 +59,11 @@ void express_wifi::WiFiEvent_static(WiFiEvent_t event, WiFiEventInfo_t info) {
   } else if (event == SYSTEM_EVENT_STA_GOT_IP || event == SYSTEM_EVENT_AP_STA_GOT_IP6 || event == SYSTEM_EVENT_AP_STAIPASSIGNED) {
     eWifi.connection_retries = 0;
     eMenu.info(__func__).pln("WiFi connected!");
+    #if (USE_LED == true)
+    eLED.removeTask(0);
+    eWifi.hasErrorBecauseNoConnection = false;
+    eLED.removeTask(1);
+    #endif
   } else {
     eMenu.debug(__func__).pln(eWifi.system_event_id_cstr[(int)event]);
   }
@@ -459,6 +464,11 @@ void express_wifi::init(WiFiClass *WiFi) {
 }
 
 void express_wifi::establishWiFiConnection() {
+
+  #if (USE_LED == true)
+  eLED.addTask(1, TASK::BLINK, 10);
+    // eLED.blink(10);
+  #endif
   WiFi.disconnect(true);
   delay(100);
 
@@ -516,7 +526,14 @@ void express_wifi::WiFiHasDisconnected() {
     eWifi.establishWiFiConnection();
   } else {
     connection_retries++;
-    eMenu.debug(__func__).p("Connections retrying in: ").pln((WIFI_CONNECTION_RETRIES - connection_retries) + 1);
+    eMenu.debug(__func__).p("Connections retrying in: ").pln((WIFI_CONNECTION_RETRIES - connection_retries) + 1);  // todo use that same time \out used in culex
+  #if (USE_LED == true)
+    if (!hasErrorBecauseNoConnection) {
+      hasErrorBecauseNoConnection = true;
+      eLED.addTask(0, TASK::ERROR, 1);
+    }
+
+  #endif
   }
 }
 

@@ -16,6 +16,7 @@
 #define EXPRESS_CONSOLE_WIFI_VER "0.1"
 
 #include <Arduino.h>
+
 #include "Settings.h"
 
 /*
@@ -36,8 +37,9 @@ extern express_wifi eWifi;
 using std::vector;
 
   #include <WiFi.h>
-
-// #include "express_status_led.h"
+  #if (USE_LED == true)
+    #include "express_status_led.h"
+  #endif
 
   #if defined(ESP8266) || defined(ESP8285)
     #include <ESP8266WiFi.h>
@@ -51,6 +53,7 @@ const int MAX_PWD  = 64;  // max number of characters in WiFi Password
 struct express_wifi {
  private:
   typedef uint32_t nvs_handle_t;
+  boolean hasErrorBecauseNoConnection = false;
 
  public:
   struct wifiData_t {

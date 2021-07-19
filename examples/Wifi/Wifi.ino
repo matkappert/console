@@ -3,6 +3,7 @@
 #define USE_NVS   true
 #define USE_WIFI  true
 #define USE_CULEX false
+#define USE_LED   true
 
 #include "Settings.h"
 #if (USE_MENU == true)
@@ -23,10 +24,9 @@
   #include "express_status_led.h"
 #endif
 
-
-
-
 void setup() {
+  eLED.init();
+  eLED.on();
   Serial.begin(BAUDRATE);
   delay(100);
   eMenu.init(Serial);
