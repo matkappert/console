@@ -82,10 +82,14 @@ enum CULEX_PERMISSIONS_e {
 struct CULEX_TRANSPORT;
 
 struct express_culex {
+ public:
+  const String version = EXPRESS_CULEX_VER;
+
  private:
   WiFiClass *_WiFi;
   WiFiClient _clientTcpCulex;
   PubSubClient culexClient = PubSubClient(_clientTcpCulex);
+  boolean hasErrorBecauseNoConnection = false;
   // char payload_buf[CULEX_PAYLOAD_SIZE];
 
   // connection

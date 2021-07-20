@@ -467,7 +467,6 @@ void express_wifi::establishWiFiConnection() {
 
   #if (USE_LED == true)
   eLED.addTask(1, TASK::BLINK, 10);
-    // eLED.blink(10);
   #endif
   WiFi.disconnect(true);
   delay(100);

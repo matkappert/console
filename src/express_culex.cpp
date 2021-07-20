@@ -50,19 +50,19 @@ struct trans_bdSeq_t : CULEX_TRANSPORT {
   }
 } trans_bdSeq;
 
-struct trans_system_coreVoltage_t : CULEX_TRANSPORT {
-  float coreVoltage = 0.00;
-  trans_system_coreVoltage_t() : CULEX_TRANSPORT({(char *)"system/coreVoltage", (EXPRESS_TYPE_ENUM)Float}) {
-    this->server_permissions = READ_PERMISSION;
-    this->user_permissions   = READ_PERMISSION;
-    this->value_float        = &coreVoltage;
-    this->timer              = 1000;
-  }
-  boolean update() {
-    coreVoltage = eUtil.getVoltage();
-    return true;
-  }
-} trans_system_coreVoltage;
+// struct trans_system_coreVoltage_t : CULEX_TRANSPORT {
+//   float coreVoltage = 0.00;
+//   trans_system_coreVoltage_t() : CULEX_TRANSPORT({(char *)"system/coreVoltage", (EXPRESS_TYPE_ENUM)Float}) {
+//     this->server_permissions = READ_PERMISSION;
+//     this->user_permissions   = READ_PERMISSION;
+//     this->value_float        = &coreVoltage;
+//     this->timer              = 1000;
+//   }
+//   boolean update() {
+//     coreVoltage = eUtil.getVoltage();
+//     return true;
+//   }
+// } trans_system_coreVoltage;
 
 void express_culex::init(WiFiClass *WiFi) {
   _WiFi = WiFi;
@@ -138,6 +138,7 @@ void express_culex::disconnect() {
 
 boolean express_culex::connect() {
   if (culexClient.state() != 0) {  // if NOT connected
+
     culexClient.disconnect();
     culexClient.setBufferSize((uint16_t)CULEX_PAYLOAD_SIZE);
     culexClient.setServer(DEFAULT_CULEX_SEVER_IP_ADDRESS, DEFAULT_CULEX_SERVER_PORT);
@@ -169,8 +170,19 @@ boolean express_culex::connect() {
       trans_bdSeq.value_uint8++;
       eMenu.debug(__func__).p("subscribing to: ").pln(trans_DATA.topic);
       culexClient.subscribe(trans_DATA.topic);
+#if (USE_LED == true)
+      hasErrorBecauseNoConnection = false;
+      eLED.removeTask(2);
+#endif
       return true;
     } else {
+#if (USE_LED == true)
+      if (!hasErrorBecauseNoConnection) {
+        hasErrorBecauseNoConnection = true;
+        eLED.addTask(2, TASK::ERROR, 2);
+      }
+
+#endif
       eMenu.error(__func__).p("connection failed! ").p(culexClient.state()).p(" ").pln(MQTT_CONNECTION_ERRORS_CHAR[culexClient.state() + 4]);
       return false;
     }

@@ -99,7 +99,7 @@
   /**
    *  CULEX
    */
-  #define USE_CULEX false
+  #define USE_CULEX true
   // clang-format off
   #define DEFAULT_CULEX_SEVER_IP_ADDRESS  (IPAddress) { 10, 0, 0, 10 }
   // clang-format on

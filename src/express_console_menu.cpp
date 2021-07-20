@@ -72,7 +72,7 @@ struct express_console_menu::menu_information_t : MENU_STRUCT {
 #endif
 #if (USE_LED == true)
     sprintf(eMenu.tableBuffer, "v%s", eLED.version);
-    eMenu.printTable(TABLE_DATA, "LED", EXPRESS_LED_STATUS_VER);
+    eMenu.printTable(TABLE_DATA, "LED", eMenu.tableBuffer);
 #endif
 
     eMenu.printTable(TABLE_END);
